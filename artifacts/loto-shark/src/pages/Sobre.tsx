@@ -141,10 +141,32 @@ export default function Sobre() {
               <Heart className="h-5 w-5 text-red-400 fill-red-400" />
               Apoie o Projeto via PIX
             </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Qualquer valor é muito bem-vindo e ajuda a manter o servidor no ar, com atualizações constantes!
-            </p>
           </CardHeader>
+
+          <CardContent className="pb-0 pt-0 px-6 mb-4">
+            <div className="p-4 bg-black/30 rounded-xl border border-white/10 text-sm text-muted-foreground space-y-2 leading-relaxed">
+              <p className="text-white/80 font-medium text-sm flex items-center gap-2">
+                <Info className="h-4 w-4 text-cyan-400 shrink-0" />
+                Por que estamos pedindo doações?
+              </p>
+              <p>
+                O <span className="text-primary font-semibold">Loto-Shark</span> é um projeto
+                independente, desenvolvido e mantido de forma voluntária, sem fins lucrativos
+                e sem anúncios. Todos os recursos — servidor, domínio, banco de dados e APIs
+                de inteligência artificial — são pagos do próprio bolso do desenvolvedor.
+              </p>
+              <p>
+                A doação via PIX é <span className="text-green-400 font-medium">100% voluntária</span>.
+                Não há nenhum produto ou serviço sendo vendido. Ao contribuir, você ajuda
+                diretamente a manter o projeto no ar e a financiar novas funcionalidades para
+                toda a comunidade.
+              </p>
+              <p className="text-xs text-white/40 border-t border-white/10 pt-2">
+                ✅ Beneficiário identificado: <strong className="text-white/60">Alex Barbosa de Sousa</strong> — Goiânia/GO.
+                Se tiver qualquer dúvida, entre em contato antes de realizar qualquer transferência.
+              </p>
+            </div>
+          </CardContent>
 
           <CardContent className="space-y-5">
             {/* Valores sugeridos */}
