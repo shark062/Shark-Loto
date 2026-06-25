@@ -756,6 +756,7 @@ export interface StatisticalContext {
   matrix:           CoMatrix;
   posWeights:       Record<number, Record<number, number>>;
   gapProfile:       GapProfile;
+  totalNumbers:     number;
 }
 
 export function buildStatisticalContext(
@@ -773,5 +774,5 @@ export function buildStatisticalContext(
   const posWeights       = buildPositionWeights(draws, minNumbers, totalNumbers);
   const gapProfile       = buildGapProfile(draws, minNumbers);
 
-  return { config, windows, compositeWeights, adjustedDelay, confidence, matrix, posWeights, gapProfile };
+  return { config, windows, compositeWeights, adjustedDelay, confidence, matrix, posWeights, gapProfile, totalNumbers };
 }

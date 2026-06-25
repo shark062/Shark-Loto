@@ -41,11 +41,11 @@ router.get("/analysis/:lotteryId", async (req, res) => {
   const { lotteryId } = req.params;
   const type = (req.query.type as string) || "prediction";
   const lottery = LOTTERIES.find(l => l.id === lotteryId);
-  if (!lottery) return res.status(404).json({ message: "Loteria não encontrada" });
+  if (!lottery) { res.status(404).json({ message: "Loteria não encontrada" }); return; }
 
   const key = `analysis:${lotteryId}:${type}`;
   const cached = analysisCache.get(key);
-  if (cached && Date.now() - cached.ts < CACHE_TTL) return res.json(cached.data);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) { res.json(cached.data); return; }
 
   try {
     const draws = await fetchHistoricalDraws(lotteryId, 50).catch(() => [] as number[][]);
@@ -151,8 +151,8 @@ router.get("/metrics", (req, res) => {
   res.json({
     providersActive: stats.active,
     providersTotal: stats.total,
-    bestProvider: stats.best,
-    totalCalls: stats.totalCalls,
+    bestProvider: null,
+    totalCalls: 0,
     cacheSize: analysisCache.size,
     rankings: providers.map(p => ({
       modelName: p.name,
@@ -169,7 +169,7 @@ router.get("/metrics", (req, res) => {
 router.get("/meta-reasoning/:lotteryId", async (req, res) => {
   const { lotteryId } = req.params;
   const lottery = LOTTERIES.find(l => l.id === lotteryId);
-  if (!lottery) return res.status(404).json({ message: "Loteria não encontrada" });
+  if (!lottery) { res.status(404).json({ message: "Loteria não encontrada" }); return; }
 
   try {
     const draws = await fetchHistoricalDraws(lotteryId, 50).catch(() => [] as number[][]);
@@ -202,7 +202,7 @@ router.get("/meta-reasoning/:lotteryId", async (req, res) => {
 router.get("/optimal-combination/:lotteryId", async (req, res) => {
   const { lotteryId } = req.params;
   const lottery = LOTTERIES.find(l => l.id === lotteryId);
-  if (!lottery) return res.status(404).json({ message: "Loteria não encontrada" });
+  if (!lottery) { res.status(404).json({ message: "Loteria não encontrada" }); return; }
 
   try {
     const draws = await fetchHistoricalDraws(lotteryId, 50).catch(() => [] as number[][]);
@@ -212,7 +212,7 @@ router.get("/optimal-combination/:lotteryId", async (req, res) => {
 
     if (stats.active === 0) {
       const nums = [...freqs].sort((a, b) => b.frequency - a.frequency).slice(0, lottery.minNumbers).map(f => f.number).sort((a, b) => a - b);
-      return res.json({ lotteryId, optimalNumbers: nums, confidence: 0.55, source: "statistical" });
+      res.json({ lotteryId, optimalNumbers: nums, confidence: 0.55, source: "statistical" }); return;
     }
 
     const ensemble = await runEnsemble(ctx);

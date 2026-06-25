@@ -258,7 +258,7 @@ async function callProvider(provider: ProviderConfig, prompt: string): Promise<{
       signal: AbortSignal.timeout(25000),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text().catch(() => "")}`);
-    const data = await response.json();
+    const data = await response.json() as any;
     return { text: data.content?.[0]?.text || "", latencyMs: Date.now() - start };
   }
 
@@ -278,7 +278,7 @@ async function callProvider(provider: ProviderConfig, prompt: string): Promise<{
     signal: AbortSignal.timeout(25000),
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text().catch(() => "")}`);
-  const data = await response.json();
+  const data = await response.json() as any;
   return { text: data.choices?.[0]?.message?.content || "", latencyMs: Date.now() - start };
 }
 

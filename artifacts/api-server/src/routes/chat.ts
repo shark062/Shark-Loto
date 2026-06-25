@@ -130,7 +130,7 @@ async function handleLotteryCommand(message: string): Promise<{ handled: boolean
 // POST /api/chat
 router.post("/", async (req, res) => {
   const { message, userId, context } = req.body;
-  if (!message) return res.status(400).json({ message: "message é obrigatório" });
+  if (!message) { res.status(400).json({ message: "message é obrigatório" }); return; }
 
   const persona = detectPersona(message);
   const systemPrompt = persona === "lek_do_black" ? LEK_PROMPT : SYSTEM_PROMPT;
@@ -151,25 +151,25 @@ router.post("/", async (req, res) => {
         replyText = `📊 **Análise - ${cmdResult.response.lottery}**\n\nSorteios analisados: ${cmdResult.response.totalAnalyzed}`;
       }
 
-      return res.json({
+      res.json({
         reply: replyText,
         visualizations: [cmdResult.response],
         suggestions: getSuggestions(cmdResult.response.lotteryId),
         persona,
         provider: "sistema",
-      });
+      }); return;
     }
 
     // Use AI for free-form conversation
     const { stats } = listProviders();
     if (stats.active === 0) {
-      return res.json({
+      res.json({
         reply: "⚠️ Nenhuma IA disponível no momento. Configure suas chaves de API na página de Provedores.",
         visualizations: [],
         suggestions: ["Gerar jogos mega-sena", "Mapa de calor lotofácil", "Analisar quina"],
         persona: "normal",
         provider: "sistema",
-      });
+      }); return;
     }
 
     const { text, provider } = await callWithFallback(message, systemPrompt);

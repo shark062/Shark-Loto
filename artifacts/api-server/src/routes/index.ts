@@ -22,8 +22,8 @@ router.get("/lottery/games", async (req: Request, res: Response) => {
         headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }
       });
       if (resp.ok) {
-        const data = await resp.json();
-        return res.json([data]);
+        const data = await resp.json() as any;
+        res.json([data]); return;
       }
     }
     res.json([]);
@@ -34,21 +34,21 @@ router.get("/lottery/games", async (req: Request, res: Response) => {
 
 router.get("/lottery/latest/:type", async (req: Request, res: Response) => {
   try {
-    const { type } = req.params;
+    const type = req.params.type as string;
     const CAIXA_API = 'https://servicebus2.caixa.gov.br/portaldeloterias/api';
     const resp = await fetch(`${CAIXA_API}/${type}`, {
       headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }
     });
     if (resp.ok) {
-      const data = await resp.json();
+      const data = await resp.json() as any;
       const numbers = data.dezenas?.map(Number) || data.listaDezenas?.map(Number) || [];
-      return res.json({
+      res.json({
         type,
         contestNumber: data.numero || 1,
         drawnNumbers: numbers,
         drawDate: data.dataApuracao || new Date().toISOString(),
         prizeAmount: data.valorArrecadado || 'R$ 0,00',
-      });
+      }); return;
     }
     res.status(404).json({ message: 'Not found' });
   } catch {
@@ -58,16 +58,16 @@ router.get("/lottery/latest/:type", async (req: Request, res: Response) => {
 
 router.get("/lottery/analyze/:type", async (req: Request, res: Response) => {
   try {
-    const { type } = req.params;
+    const type = req.params.type as string;
     const lottery = LOTTERIES.find(l => l.id === type);
     const totalNumbers = lottery?.totalNumbers || 60;
 
     const draws = await fetchHistoricalDraws(type, 30);
     if (draws.length === 0) {
-      return res.json({
+      res.json({
         recommendation: 'Dados insuficientes para análise. Tente novamente em instantes.',
         stats: { hotNumbers: [], coldNumbers: [], warmNumbers: [], rareNumbers: [], frequencyMap: {}, delayMap: {}, drawsAnalyzed: 0 },
-      });
+      }); return;
     }
 
     const freqs = computeFrequencies(totalNumbers, draws);
@@ -137,7 +137,7 @@ router.post("/lottery/generate", async (req: Request, res: Response) => {
   try {
     const draws     = await fetchHistoricalDraws(finalLotteryId, 30);
     const drawsUsed = draws.length;
-    if (drawsUsed < 2) return res.status(503).json({ message: 'Sorteios indisponíveis no momento.' });
+    if (drawsUsed < 2) { res.status(503).json({ message: 'Sorteios indisponíveis no momento.' }); return; }
 
     const pesosEstrategia = STRATEGY_PESOS[strategy] || STRATEGY_PESOS.mixed;
     const { jogos } = gerarJogosMaster(draws, count, lottery.totalNumbers, qty, pesosEstrategia, finalLotteryId);
@@ -258,7 +258,7 @@ router.post("/user/games/check", async (req: Request, res: Response) => {
       .where(eq(userGamesTable.status, 'pending'));
 
     if (pendingGames.length === 0) {
-      return res.json({ updatedCount: 0, checked: 0 });
+      res.json({ updatedCount: 0, checked: 0 }); return;
     }
 
     // 2. Loterias únicas presentes nos jogos pendentes
@@ -365,8 +365,8 @@ router.get("/games", async (req: Request, res: Response) => {
 // DELETE /api/games/:id — remove um jogo específico
 router.delete("/games/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ message: 'ID inválido' });
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) { res.status(400).json({ message: 'ID inválido' }); return; }
     await db.delete(userGamesTable).where(eq(userGamesTable.id, id));
     res.json({ success: true, deleted: id });
   } catch (err: any) {
@@ -422,9 +422,9 @@ router.post("/games/generate", async (req: Request, res: Response) => {
     const drawsUsed = draws.length;
 
     if (drawsUsed < 2) {
-      return res.status(503).json({
+      res.status(503).json({
         message: `Não foi possível buscar sorteios reais da ${lottery.displayName}. Aguarde e tente novamente.`,
-      });
+      }); return;
     }
 
     // Pesos: usa do request se veio (estratégia shark com pesos customizados), senão usa o padrão da estratégia
@@ -507,7 +507,7 @@ router.post("/games/desdobramento", async (req: Request, res: Response) => {
   const lottery = LOTTERIES.find(l => l.id === lotteryId) || LOTTERIES[0];
 
   if (!Array.isArray(jogos) || jogos.length === 0) {
-    return res.status(400).json({ message: 'Envie os jogos Shark para gerar o desdobramento' });
+    res.status(400).json({ message: 'Envie os jogos Shark para gerar o desdobramento' }); return;
   }
 
   const sharkResults = jogos.map((j: any) => ({
@@ -556,7 +556,7 @@ router.get("/auth/user", (req: Request, res: Response) => {
 router.post("/auth/login", (req: Request, res: Response) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+    res.status(400).json({ message: 'Email e senha são obrigatórios' }); return;
   }
   res.json({
     user: { id: 'user-1', email, name: email.split('@')[0], isPremium: false },
@@ -567,11 +567,11 @@ router.post("/auth/login", (req: Request, res: Response) => {
 router.post("/auth/register", (req: Request, res: Response) => {
   const { email, password, firstName } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+    res.status(400).json({ message: 'Email e senha são obrigatórios' }); return;
   }
   res.json({
-    user: { id: 'user-' + Date.now(), email, name: firstName || email.split('@')[0], isPremium: false },
-    token: 'mock-token-' + Date.now(),
+    user: { id: `user-${Date.now()}`, email, name: firstName || email.split('@')[0], isPremium: false },
+    token: `mock-token-${Date.now()}`,
   });
 });
 

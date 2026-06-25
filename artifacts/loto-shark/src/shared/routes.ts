@@ -8,6 +8,11 @@ export const LotteryGameSchema = z.object({
   prizeAmount: z.string().optional(),
   drawDate: z.string().optional(),
   createdAt: z.string().optional(),
+  nextPrizeEstimate: z.number().optional(),
+  date: z.string().optional(),
+  numbers: z.array(z.number()).optional(),
+  winnersCount: z.number().optional(),
+  prizeEstimate: z.number().optional(),
 });
 
 export const GeneratedGameSchema = z.object({
@@ -18,6 +23,7 @@ export const GeneratedGameSchema = z.object({
   strategy: z.string().optional(),
   contestNumber: z.number().optional(),
   createdAt: z.string().optional(),
+  status: z.string().optional(),
 });
 
 export type LotteryGame = z.infer<typeof LotteryGameSchema>;

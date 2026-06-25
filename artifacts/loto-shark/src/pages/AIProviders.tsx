@@ -28,6 +28,7 @@ interface ProviderConfig {
   avgLatencyMs: number;
   lastUsed?: string;
   lastError?: string;
+  hasEnvKey?: boolean;
 }
 
 interface EvolutionEntry {

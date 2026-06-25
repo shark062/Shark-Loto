@@ -154,7 +154,7 @@ router.get("/live-status", async (req, res) => {
   const candidates = LOTTERIES.filter(l => getIsLive(l.drawDays, l.drawTime));
 
   if (candidates.length === 0) {
-    return res.json({ isLive: false, activeLotteries: [] });
+    res.json({ isLive: false, activeLotteries: [] }); return;
   }
 
   // Verificação real contra a API da Caixa (só para candidatas)
@@ -177,13 +177,13 @@ router.get("/live-status", async (req, res) => {
 // GET /api/lotteries/:id
 router.get("/:id", async (req, res) => {
   const lottery = LOTTERIES.find(l => l.id === req.params.id);
-  if (!lottery) return res.status(404).json({ message: 'Lottery not found' });
+  if (!lottery) { res.status(404).json({ message: 'Lottery not found' }); return; }
   res.json(lottery);
 });
 
 async function drawsHandler(req: any, res: any) {
   const lottery = LOTTERIES.find(l => l.id === req.params.id);
-  if (!lottery) return res.status(404).json({ message: 'Lottery not found' });
+  if (!lottery) { res.status(404).json({ message: 'Lottery not found' }); return; }
   
   try {
     const data = await fetchLatestDraw(req.params.id);
@@ -200,7 +200,7 @@ router.get("/:id/draws/:extra", drawsHandler);
 // GET /api/lotteries/:id/next-draw
 router.get("/:id/next-draw", async (req, res) => {
   const lottery = LOTTERIES.find(l => l.id === req.params.id);
-  if (!lottery) return res.status(404).json({ message: 'Lottery not found' });
+  if (!lottery) { res.status(404).json({ message: 'Lottery not found' }); return; }
   
   const nextDrawDate = getNextDrawDate(lottery.drawDays, lottery.drawTime);
   const now = new Date();
@@ -243,11 +243,11 @@ router.get("/:id/next-draw", async (req, res) => {
 // GET /api/lotteries/:id/prizes — dados reais de premiação da Caixa
 router.get("/:id/prizes", async (req, res) => {
   const lottery = LOTTERIES.find(l => l.id === req.params.id);
-  if (!lottery) return res.status(404).json({ message: 'Lottery not found' });
+  if (!lottery) { res.status(404).json({ message: 'Lottery not found' }); return; }
 
   try {
     const data = await fetchLatestDraw(req.params.id);
-    if (!data) return res.status(503).json({ message: 'Dados indisponíveis no momento' });
+    if (!data) { res.status(503).json({ message: 'Dados indisponíveis no momento' }); return; }
 
     const contestNumber   = data.numero || data.contestNumber || 0;
     const nextContest     = contestNumber + 1;
@@ -294,7 +294,7 @@ router.get("/:id/prizes", async (req, res) => {
 // GET /api/lotteries/:id/frequency
 router.get("/:id/frequency", async (req, res) => {
   const lottery = LOTTERIES.find(l => l.id === req.params.id);
-  if (!lottery) return res.status(404).json({ message: 'Lottery not found' });
+  if (!lottery) { res.status(404).json({ message: 'Lottery not found' }); return; }
 
   try {
     const draws       = await fetchHistoricalDraws(req.params.id, 30);

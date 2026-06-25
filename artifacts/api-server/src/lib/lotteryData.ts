@@ -58,7 +58,7 @@ async function fetchDraw(lotteryId: string, contestNumber: number): Promise<numb
       signal: AbortSignal.timeout(8000),
     });
     if (!resp.ok) return null;
-    const data = await resp.json();
+    const data = await resp.json() as any;
     const nums = data.dezenas?.map(Number) || data.listaDezenas?.map(Number) || [];
     return nums.length > 0 ? nums : null;
   } catch {

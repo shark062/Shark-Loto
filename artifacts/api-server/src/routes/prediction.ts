@@ -49,7 +49,7 @@ function buildContext(lotteryId: string, lottery: any, draws: number[][]): Lotte
 router.get("/generate/:lotteryId", async (req, res) => {
   const { lotteryId } = req.params;
   const lottery = LOTTERIES.find(l => l.id === lotteryId);
-  if (!lottery) return res.status(404).json({ message: "Loteria não encontrada" });
+  if (!lottery) { res.status(404).json({ message: "Loteria não encontrada" }); return; }
 
   try {
     const draws = await fetchHistoricalDraws(lotteryId, 20).catch(() => [] as number[][]);
@@ -60,7 +60,7 @@ router.get("/generate/:lotteryId", async (req, res) => {
       // Statistical fallback
       const freqs = computeFrequencies(lottery.totalNumbers, draws);
       const primary = generateSmartNumbers(freqs, lottery.minNumbers, "mixed", lottery.totalNumbers);
-      return res.json({
+      res.json({
         lotteryId,
         lotteryName: lottery.displayName,
         primaryPrediction: primary,
@@ -71,7 +71,7 @@ router.get("/generate/:lotteryId", async (req, res) => {
         drawsAnalyzed: draws.length,
         hotNumbers: ctx.hotNumbers.slice(0, 5),
         coldNumbers: ctx.coldNumbers.slice(0, 5),
-      });
+      }); return;
     }
 
     const ensemble = await runEnsemble(ctx);
@@ -111,7 +111,7 @@ router.get("/generate/:lotteryId", async (req, res) => {
 router.post("/ensemble", async (req, res) => {
   const { lotteryId = "megasena", gamesCount = 3 } = req.body;
   const lottery = LOTTERIES.find(l => l.id === lotteryId);
-  if (!lottery) return res.status(404).json({ message: "Loteria não encontrada" });
+  if (!lottery) { res.status(404).json({ message: "Loteria não encontrada" }); return; }
 
   try {
     const draws = await fetchHistoricalDraws(lotteryId, 20).catch(() => [] as number[][]);
@@ -125,7 +125,7 @@ router.post("/ensemble", async (req, res) => {
         source: "Estatístico",
         confidence: 0.55,
       }));
-      return res.json({ lotteryId, games, ensemble: null });
+      res.json({ lotteryId, games, ensemble: null }); return;
     }
 
     const ensemble = await runEnsemble(ctx);

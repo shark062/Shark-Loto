@@ -63,9 +63,9 @@ function buildCtx(lotteryId: string, lottery: any, draws: number[][]): LotteryCo
 }
 
 app.get("/api/meta-reasoning/analyze/:lotteryId", async (req: Request, res: Response) => {
-  const { lotteryId } = req.params;
+  const lotteryId = req.params.lotteryId as string;
   const lottery = LOTTERIES.find(l => l.id === lotteryId);
-  if (!lottery) return res.status(404).json({ message: "Loteria não encontrada" });
+  if (!lottery) { res.status(404).json({ message: "Loteria não encontrada" }); return; }
   try {
     const draws = await fetchHistoricalDraws(lotteryId, 20).catch(() => [] as number[][]);
     const ctx = buildCtx(lotteryId, lottery, draws);
@@ -85,15 +85,15 @@ app.get("/api/meta-reasoning/analyze/:lotteryId", async (req: Request, res: Resp
 });
 
 app.get("/api/meta-reasoning/optimal-combination/:lotteryId", async (req: Request, res: Response) => {
-  const { lotteryId } = req.params;
+  const lotteryId = req.params.lotteryId as string;
   const lottery = LOTTERIES.find(l => l.id === lotteryId);
-  if (!lottery) return res.status(404).json({ message: "Loteria não encontrada" });
+  if (!lottery) { res.status(404).json({ message: "Loteria não encontrada" }); return; }
   try {
     const draws = await fetchHistoricalDraws(lotteryId, 20).catch(() => [] as number[][]);
     const ctx = buildCtx(lotteryId, lottery, draws);
     const { stats } = listProviders();
     if (stats.active === 0) {
-      return res.json({ lotteryId, optimalNumbers: ctx.hotNumbers.slice(0, lottery.minNumbers).sort((a, b) => a - b), confidence: 0.55, source: "statistical" });
+      res.json({ lotteryId, optimalNumbers: ctx.hotNumbers.slice(0, lottery.minNumbers).sort((a, b) => a - b), confidence: 0.55, source: "statistical" }); return;
     }
     const ensemble = await runEnsemble(ctx);
     res.json({

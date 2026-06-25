@@ -63,6 +63,7 @@ export default function CelebrationAnimation({
     } else {
       setConfetti([]); // Clear confetti when not visible
       setShow(false); // Ensure show is false when not visible
+      return;
     }
   }, [isVisible]); // Only isVisible as dependency to prevent infinite loop
 

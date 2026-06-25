@@ -398,7 +398,7 @@ export async function callBestProvider(prompt: string, systemPrompt?: string): P
           signal: AbortSignal.timeout(25000),
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
+        const data = await response.json() as any;
         const text = data.content?.[0]?.text || "";
         if (text) {
           provider.totalCalls++;
@@ -444,7 +444,7 @@ export async function callBestProvider(prompt: string, systemPrompt?: string): P
           }
           throw new Error(`HTTP ${response.status}: ${errText.slice(0, 80)}`);
         }
-        const data = await response.json();
+        const data = await response.json() as any;
         const text = data.choices?.[0]?.message?.content || "";
         if (text) {
           provider.totalCalls++;

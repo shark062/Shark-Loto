@@ -25,7 +25,7 @@ router.get("/evolution", (req, res) => {
 router.post("/", async (req, res) => {
   const { type, name, apiKey, model, baseUrl } = req.body;
   if (!type || !name || !apiKey) {
-    return res.status(400).json({ message: "type, name e apiKey são obrigatórios" });
+    res.status(400).json({ message: "type, name e apiKey são obrigatórios" }); return;
   }
   try {
     const provider = await addProvider({ type, name, apiKey, model, baseUrl });
@@ -38,7 +38,7 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const updated = await updateProvider(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ message: "Provider não encontrado" });
+    if (!updated) { res.status(404).json({ message: "Provider não encontrado" }); return; }
     res.json({ ...updated, apiKey: undefined });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -48,7 +48,7 @@ router.put("/:id", async (req, res) => {
 router.patch("/:id", async (req, res) => {
   try {
     const updated = await updateProvider(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ message: "Provider não encontrado" });
+    if (!updated) { res.status(404).json({ message: "Provider não encontrado" }); return; }
     res.json({ ...updated, apiKey: undefined });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -58,7 +58,7 @@ router.patch("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     const ok = await deleteProvider(req.params.id);
-    if (!ok) return res.status(404).json({ message: "Provider não encontrado" });
+    if (!ok) { res.status(404).json({ message: "Provider não encontrado" }); return; }
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -94,7 +94,7 @@ router.post("/sync-env", async (_req, res) => {
 
 router.post("/chat", async (req, res) => {
   const { prompt, systemPrompt } = req.body;
-  if (!prompt) return res.status(400).json({ message: "prompt é obrigatório" });
+  if (!prompt) { res.status(400).json({ message: "prompt é obrigatório" }); return; }
   try {
     const text = await callBestProvider(prompt, systemPrompt);
     res.json({ text });
