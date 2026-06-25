@@ -1,5 +1,7 @@
 import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import aiProvidersRouter from "./routes/aiProviders";
@@ -15,6 +17,13 @@ import type { LotteryContext } from "./lib/aiEnsemble";
 
 const app: Express = express();
 
+// ── Segurança: cabeçalhos HTTP ─────────────────────────────────
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: false,
+}));
+
+// ── Logging ────────────────────────────────────────────────────
 app.use(
   pinoHttp({
     logger,
@@ -24,6 +33,8 @@ app.use(
     },
   }),
 );
+
+// ── CORS ───────────────────────────────────────────────────────
 const allowedOrigins = [
   /^https?:\/\/localhost(:\d+)?$/,
   /\.onrender\.com$/,
@@ -42,8 +53,44 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+app.use(express.json({ limit: "100kb" }));
+app.use(express.urlencoded({ extended: true, limit: "100kb" }));
+
+// ── Rate limits ────────────────────────────────────────────────
+
+// Geral: 120 req/min por IP
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Muitas requisições. Tente novamente em instantes." },
+});
+
+// IA / predição: 20 req/min (custoso)
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Limite de requisições de IA atingido. Aguarde 1 minuto." },
+});
+
+// Geração de jogos: 30 req/min
+const gameLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Limite de geração de jogos atingido. Aguarde 1 minuto." },
+});
+
+app.use("/api", generalLimiter);
+app.use("/api/ai",          aiLimiter);
+app.use("/api/chat",        aiLimiter);
+app.use("/api/prediction",  gameLimiter);
+app.use("/api/user/games",  gameLimiter);
 
 // ── Core routes ───────────────────────────────────────────────
 app.use("/api", router);
@@ -98,7 +145,9 @@ app.get("/api/meta-reasoning/analyze/:lotteryId", async (req: Request, res: Resp
       coldNumbers: ctx.coldNumbers.slice(0, 8),
       avgSum: ctx.avgSum,
     });
-  } catch (err: any) { res.status(500).json({ message: err.message }); }
+  } catch {
+    res.status(500).json({ message: "Erro interno ao analisar modalidade." });
+  }
 });
 
 app.get("/api/meta-reasoning/optimal-combination/:lotteryId", async (req: Request, res: Response) => {
@@ -119,7 +168,9 @@ app.get("/api/meta-reasoning/optimal-combination/:lotteryId", async (req: Reques
       confidence: ensemble.overallConfidence, source: "ensemble",
       providers: ensemble.successfulProviders,
     });
-  } catch (err: any) { res.status(500).json({ message: err.message }); }
+  } catch {
+    res.status(500).json({ message: "Erro interno ao gerar combinação ótima." });
+  }
 });
 
 app.post("/api/meta-reasoning/feedback", (req: Request, res: Response) => {

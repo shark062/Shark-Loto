@@ -1,7 +1,7 @@
 // ============================================================
-//  Shark Engine v3 — Motor Master com Motor Estatístico Avançado
-//  Integra: análise multi-janela, evolução genética, score
-//  multi-dimensional, diversidade, cobertura e risco.
+//  Shark Engine v3.1 — Motor Master com Momentum + Genética Aprimorada
+//  Integra: análise multi-janela, evolução genética adaptativa,
+//  score multi-dimensional (11 dimensões), diversidade, cobertura.
 //  Backward-compatible: todas as exportações anteriores mantidas.
 // ============================================================
 
@@ -61,7 +61,6 @@ export interface MasterOutput {
     totalCandidatos:   number;
     totalValidados:    number;
     estrategiasUsadas: string[];
-    // Novos campos (opcionais — não quebram código existente)
     confidence?:       Record<number, number>;
     scoreDetalhado?:   string;
   };
@@ -95,7 +94,7 @@ function dedup(jogo: number[]): number[] {
 }
 
 // ============================================================
-//  Contexto básico quente/fria (mantido para compatibilidade)
+//  Contexto básico quente/fria/morna (compatibilidade v2)
 // ============================================================
 
 function buildContextCompleto(
@@ -152,7 +151,7 @@ function buildContextCompleto(
 }
 
 // ============================================================
-//  Validação por modalidade (density-aware) — mantida v2
+//  Validação por modalidade (density-aware)
 // ============================================================
 
 function validarJogo(jogo: number[], totalNumbers: number, minNumbers: number): boolean {
@@ -213,7 +212,7 @@ function scoreCompleto(jogo: number[], ctx: SharkContext, pesos: SharkPesos = PE
 }
 
 // ============================================================
-//  Estratégias de geração (mantidas — base do pool inicial)
+//  Estratégias clássicas
 // ============================================================
 
 function gerarImpulso(ctx: SharkContext): number[] {
@@ -273,7 +272,34 @@ function gerarRepBaixa(ctx: SharkContext): number[] {
 }
 
 // ============================================================
-//  Estratégia NÚCLEO + VARIAÇÃO (nova — usa motor estatístico)
+//  Estratégia MOMENTUM — números com tendência ascendente
+//  Seleciona números que apareceram nos últimos 3 sorteios
+//  combinados com os de maior atraso ajustado (momentum puro)
+// ============================================================
+
+function gerarMomentum(ctx: SharkContext, statCtx: StatisticalContext): number[] {
+  const { totalNumbers, minNumbers } = ctx;
+  const { momentum, adjustedDelay } = statCtx;
+
+  const nums = Array.from({ length: totalNumbers }, (_, i) => i + 1);
+  // Score: 60% momentum + 40% atraso ajustado para equilibrar tendência e "dívida"
+  const ranked = nums
+    .map(n => ({ n, w: (momentum[n] ?? 0.5) * 0.60 + (adjustedDelay[n] ?? 0) * 0.40 }))
+    .sort((a, b) => b.w - a.w);
+
+  // Pega o top 60% por momentum e faz seleção aleatória ponderada
+  const pool   = ranked.slice(0, Math.ceil(totalNumbers * 0.60)).map(x => x.n);
+  const result = pick(pool, minNumbers);
+  // Se faltar, completa com o restante
+  if (result.length < minNumbers) {
+    const extra = nums.filter(n => !result.includes(n));
+    result.push(...pick(extra, minNumbers - result.length));
+  }
+  return dedup(result).slice(0, minNumbers).sort((a, b) => a - b);
+}
+
+// ============================================================
+//  Estratégia NÚCLEO + VARIAÇÃO (motor estatístico)
 // ============================================================
 
 function gerarNucleoVariacao(ctx: SharkContext, statCtx: StatisticalContext): number[] {
@@ -282,7 +308,6 @@ function gerarNucleoVariacao(ctx: SharkContext, statCtx: StatisticalContext): nu
 
   const nums = Array.from({ length: totalNumbers }, (_, i) => i + 1);
 
-  // Núcleo: top dezenas por peso composto + atraso ajustado
   const ranked = nums
     .map(n => ({ n, w: (compositeWeights[n] ?? 0) * 0.65 + (adjustedDelay[n] ?? 0) * 0.35 }))
     .sort((a, b) => b.w - a.w);
@@ -302,7 +327,6 @@ function gerarPorJanela(statCtx: StatisticalContext, minNumbers: number): number
   const { compositeWeights, totalNumbers } = statCtx;
   const nums = Array.from({ length: totalNumbers }, (_, i) => i + 1);
 
-  // Seleção probabilística ponderada pelos pesos compostos
   const weights = nums.map(n => Math.max(compositeWeights[n] ?? 0, 0.001));
   const totalW  = weights.reduce((a, b) => a + b, 0);
   const selected = new Set<number>();
@@ -317,7 +341,6 @@ function gerarPorJanela(statCtx: StatisticalContext, minNumbers: number): number
     }
   }
 
-  // Completa se faltar
   if (selected.size < minNumbers) {
     for (const n of shuffle(nums)) {
       if (selected.size >= minNumbers) break;
@@ -326,6 +349,42 @@ function gerarPorJanela(statCtx: StatisticalContext, minNumbers: number): number
   }
 
   return [...selected].sort((a, b) => a - b).slice(0, minNumbers);
+}
+
+// ============================================================
+//  Estratégia ANTI-CLUSTER — distribui uniformemente no volante
+//  Garante que nenhuma região do volante fique sem representação
+// ============================================================
+
+function gerarAntiCluster(ctx: SharkContext, statCtx: StatisticalContext): number[] {
+  const { minNumbers, totalNumbers } = ctx;
+  const { compositeWeights, momentum, config } = statCtx;
+  const groups = config.groups;
+  const size   = Math.ceil(totalNumbers / groups);
+
+  // Distribui dezenas por grupo, privilegiando peso composto + momentum
+  const perGroup = Math.ceil(minNumbers / groups);
+  const result: number[] = [];
+
+  for (let g = 0; g < groups; g++) {
+    const start = g * size + 1;
+    const end   = Math.min((g + 1) * size, totalNumbers);
+    const groupNums = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+    const ranked = groupNums
+      .map(n => ({ n, w: (compositeWeights[n] ?? 0) * 0.70 + (momentum[n] ?? 0.5) * 0.30 }))
+      .sort((a, b) => b.w - a.w);
+    const take = Math.min(perGroup, ranked.length);
+    result.push(...ranked.slice(0, take).map(x => x.n));
+  }
+
+  // Ajusta para exatamente minNumbers
+  const deduped = dedup(result);
+  if (deduped.length > minNumbers) return deduped.slice(0, minNumbers).sort((a, b) => a - b);
+  if (deduped.length < minNumbers) {
+    const all = Array.from({ length: totalNumbers }, (_, i) => i + 1).filter(n => !deduped.includes(n));
+    deduped.push(...pick(all, minNumbers - deduped.length));
+  }
+  return dedup(deduped).slice(0, minNumbers).sort((a, b) => a - b);
 }
 
 const ESTRATEGIAS_BASE = [
@@ -349,23 +408,21 @@ function gerarCandidatos(
   const candidatos: Array<{ jogo: number[]; origem: string }> = [];
 
   for (let i = 0; i < rodadas; i++) {
-    // Estratégias clássicas
     for (const { nome, fn } of ESTRATEGIAS_BASE) {
       candidatos.push({ jogo: fn(ctx).sort((a, b) => a - b), origem: nome });
     }
-    // Estratégia por peso dinâmico (pesos da estratégia do usuário)
-    candidatos.push({ jogo: gerarPorPeso(ctx, pesos).sort((a, b) => a - b), origem: 'peso_dinamico' });
-    // Estratégia por janela de frequência ponderada (nova)
-    candidatos.push({ jogo: gerarPorJanela(statCtx, ctx.minNumbers).sort((a, b) => a - b), origem: 'janela_ponderada' });
-    // Estratégia núcleo + variação (nova)
-    candidatos.push({ jogo: gerarNucleoVariacao(ctx, statCtx).sort((a, b) => a - b), origem: 'nucleo_variacao' });
+    candidatos.push({ jogo: gerarPorPeso(ctx, pesos).sort((a, b) => a - b),                 origem: 'peso_dinamico'  });
+    candidatos.push({ jogo: gerarPorJanela(statCtx, ctx.minNumbers).sort((a, b) => a - b),  origem: 'janela_ponderada' });
+    candidatos.push({ jogo: gerarNucleoVariacao(ctx, statCtx).sort((a, b) => a - b),        origem: 'nucleo_variacao' });
+    candidatos.push({ jogo: gerarMomentum(ctx, statCtx).sort((a, b) => a - b),              origem: 'momentum'       });
+    candidatos.push({ jogo: gerarAntiCluster(ctx, statCtx).sort((a, b) => a - b),           origem: 'anti_cluster'   });
   }
 
   return candidatos;
 }
 
 // ============================================================
-//  Desdobramento por pool quente+fria (mantido v2)
+//  Desdobramento por pool quente+fria
 // ============================================================
 
 function combinacoes(arr: number[], k: number, limite: number): number[][] {
@@ -400,7 +457,7 @@ function buildPoolQuenteFria(ctx: SharkContext, qtdJogos: number): number[] {
 }
 
 // ============================================================
-//  FUNÇÃO MASTER — integra v2 + motor estatístico v3
+//  FUNÇÃO MASTER — integra v2 + motor estatístico v3.1
 // ============================================================
 
 export function gerarJogosMaster(
@@ -430,12 +487,13 @@ export function gerarJogosMaster(
   // ── Contexto básico (v2) ──────────────────────────────────
   const ctx = buildContextCompleto(draws, totalNumbers, minNumbers);
 
-  // ── Contexto estatístico avançado (v3) ───────────────────
+  // ── Contexto estatístico avançado (v3.1) ─────────────────
   const resolvedId = lotteryId ?? 'megasena';
   const statCtx    = buildStatisticalContext(draws, resolvedId, totalNumbers, minNumbers);
 
   // ── PASSO 1: Geração multi-estratégia ────────────────────
-  const rodadas    = Math.max(200, qtd * 25);
+  //    v3.1: mais rodadas + 2 novas estratégias (momentum, anti_cluster)
+  const rodadas    = Math.max(300, qtd * 40);
   const candidatos = gerarCandidatos(ctx, statCtx, rodadas, pesosAtivos);
 
   // ── PASSO 2: Deduplicação + validação ────────────────────
@@ -452,7 +510,7 @@ export function gerarJogosMaster(
 
   // ── PASSO 3: Desdobramento quente+fria ───────────────────
   const pool       = buildPoolQuenteFria(ctx, qtd);
-  const limDesd    = Math.min(1500, Math.max(400, qtd * 60));
+  const limDesd    = Math.min(2000, Math.max(500, qtd * 80));
   const combosDesd = combinacoes(pool, minNumbers, limDesd);
 
   for (const combo of combosDesd) {
@@ -463,8 +521,9 @@ export function gerarJogosMaster(
     validados.push({ jogo: combo, origem: 'desdobramento' });
   }
 
-  // ── PASSO 4: Algoritmo Evolutivo (v3) ────────────────────
-  //    Evolve os candidatos validados por 3 gerações
+  // ── PASSO 4: Algoritmo Evolutivo v3.1 ────────────────────
+  //    5 gerações, mutação adaptativa, momentum integrado
+  const popSize = Math.min(800, Math.max(300, qtd * 50));
   const evolved = evolvePopulation(
     validados,
     statCtx.config,
@@ -474,21 +533,19 @@ export function gerarJogosMaster(
     statCtx.posWeights,
     statCtx.gapProfile,
     statCtx.confidence,
-    3,
-    Math.min(600, Math.max(200, qtd * 40)),
+    5,        // gerações (era 3)
+    popSize,  // população maior
+    statCtx.momentum,
   );
 
-  // ── PASSO 5: Score híbrido (mestre v3 normalizado) ───────
-  //    master score 0-100 → escalado ×3 para manter compatibilidade
-  //    com o cálculo de confidence em routes (0.55 + score/600)
+  // ── PASSO 5: Score híbrido (mestre v3.1 normalizado) ─────
   const pontuados: SharkResult[] = evolved.map(e => ({
     jogo:      e.jogo,
-    score:     e.masterScore * 3,          // 0-300 range (backward compat)
+    score:     e.masterScore * 3,
     origem:    e.origem,
     riskLevel: e.riskLevel,
   }));
 
-  // Garante que candidatos da v2 não evoluídos também são representados
   const evolvedKeys = new Set(evolved.map(e => e.jogo.join(',')));
   for (const v of validados) {
     if (evolvedKeys.has(v.jogo.join(','))) continue;
@@ -501,6 +558,7 @@ export function gerarJogosMaster(
       statCtx.posWeights,
       statCtx.gapProfile,
       statCtx.confidence,
+      statCtx.momentum,
     );
     pontuados.push({ jogo: v.jogo, score: ms * 3, origem: v.origem, riskLevel });
   }
@@ -508,11 +566,10 @@ export function gerarJogosMaster(
   pontuados.sort((a, b) => b.score - a.score);
 
   // ── PASSO 6: Filtro de diversidade (Jaccard) ─────────────
-  //    Distância mínima entre jogos: evita quase-duplicatas
   const density     = minNumbers / totalNumbers;
   const minDistance = density > 0.40 ? 0.15 : 0.30;
 
-  const diversificados = filterByDiversity(pontuados, minDistance, qtd * 3);
+  const diversificados = filterByDiversity(pontuados, minDistance, qtd * 4);
 
   // ── PASSO 7: Maximização de cobertura ────────────────────
   const comCobertura = maximizeCoverage(diversificados, totalNumbers, qtd * 2);
@@ -520,7 +577,6 @@ export function gerarJogosMaster(
   // ── PASSO 8: Entrega os N melhores ───────────────────────
   const melhores = comCobertura.slice(0, qtd);
 
-  // Fallback: se não chegamos ao qtd, complementa com os melhores pontuados
   if (melhores.length < qtd) {
     const melhoresKeys = new Set(melhores.map(m => m.jogo.join(',')));
     for (const p of pontuados) {
@@ -537,8 +593,12 @@ export function gerarJogosMaster(
       cold:              ctx.cold.slice(0, 10),
       totalCandidatos:   candidatos.length + combosDesd.length,
       totalValidados:    validados.length,
-      estrategiasUsadas: [...ESTRATEGIAS_BASE.map(e => e.nome), 'peso_dinamico', 'janela_ponderada', 'nucleo_variacao', 'desdobramento', 'evolutivo'],
-      confidence:        statCtx.confidence,
+      estrategiasUsadas: [
+        ...ESTRATEGIAS_BASE.map(e => e.nome),
+        'peso_dinamico', 'janela_ponderada', 'nucleo_variacao',
+        'momentum', 'anti_cluster', 'desdobramento', 'evolutivo',
+      ],
+      confidence: statCtx.confidence,
     },
   };
 }

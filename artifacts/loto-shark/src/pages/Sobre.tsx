@@ -22,8 +22,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const PIX_PAYLOAD = "00020101021126580014br.gov.bcb.pix01365d237461-0a79-4ff3-9c8d-40afadf909b15204000053039865802BR5921ALEX BARBOSA DE SOUSA6007GOIANIA62070503***63049872";
-const NOME_BENEFICIARIO = "Alex Barbosa de Sousa";
+const PIX_PAYLOAD = "00020101021126580014br.gov.bcb.pix01365d237461-0a79-4ff3-9c8d-40afadf909b15204000053039865802BR5910ALEX SOUSA6007GOIANIA62070503***6304C7B4";
+const NOME_BENEFICIARIO = "Alex Sousa";
 
 const FEATURES = [
   { icon: Brain, label: "IA com múltiplos provedores", color: "text-purple-400" },

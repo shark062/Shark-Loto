@@ -25,9 +25,27 @@ function normalizeDrawData(data: any, lotteryId: string) {
   };
 }
 
-function getNextDrawDate(drawDays: string[], drawTime: string) {
+/**
+ * Converte data no formato "DD/MM/YYYY" para um Date UTC no horário do sorteio (Brasília = UTC-3).
+ */
+function parseCaixaDate(dateStr: string, drawTime: string): Date | null {
+  if (!dateStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return null;
+  const [day, month, year] = dateStr.split('/').map(Number);
+  const [h, m] = drawTime.split(':').map(Number);
+  // Horário de Brasília é UTC-3: para UTC somamos 3h
+  const utc = new Date(Date.UTC(year, month - 1, day, h + 3, m, 0, 0));
+  return isNaN(utc.getTime()) ? null : utc;
+}
+
+function getNextDrawDate(drawDays: string[], drawTime: string, caixaNextDate?: string | null): Date {
+  // Prioridade 1: usa data real da Caixa (evita erros por feriados/remarcações)
+  if (caixaNextDate) {
+    const parsed = parseCaixaDate(caixaNextDate, drawTime);
+    if (parsed && parsed.getTime() > Date.now()) return parsed;
+  }
+
   const dayMap: Record<string, number> = {
-    'domingo': 0, 'sunday': 0,
+    'domingo': 0, 'sunday': 0, 'dom': 0,
     'segunda': 1, 'segunda-feira': 1, 'seg': 1, 'monday': 1,
     'terça': 2, 'terca': 2, 'ter': 2, 'tuesday': 2,
     'quarta': 3, 'qua': 3, 'wednesday': 3,
@@ -51,18 +69,17 @@ function getNextDrawDate(drawDays: string[], drawTime: string) {
   const minutesFromMidnight = brazilH * 60 + brazilMin;
   const drawMinutes = h * 60 + m;
 
-  // Janela ao vivo: de 30 min antes até 90 min depois do horário do sorteio
   const LIVE_BEFORE_MIN = 30;
   const LIVE_AFTER_MIN = 90;
 
   if (drawDayNumbers.includes(today)) {
-    // Antes do sorteio (ainda não chegou)
-    if (minutesFromMidnight < drawMinutes) {
+    // Ainda antes do sorteio de hoje
+    if (minutesFromMidnight < drawMinutes - LIVE_BEFORE_MIN) {
       const todayDraw = new Date(now);
       todayDraw.setUTCHours(h + 3, m, 0, 0);
       return todayDraw;
     }
-    // Dentro da janela ao vivo (sorteio acontecendo ou recém terminado)
+    // Dentro da janela ao vivo (inclui antes + logo depois)
     if (minutesFromMidnight <= drawMinutes + LIVE_AFTER_MIN) {
       const todayDraw = new Date(now);
       todayDraw.setUTCHours(h + 3, m, 0, 0);
@@ -70,7 +87,7 @@ function getNextDrawDate(drawDays: string[], drawTime: string) {
     }
   }
 
-  // Encontra o próximo dia de sorteio
+  // Próximo dia de sorteio (considerando todos os dias da semana)
   let daysUntilNext = 7;
   for (const dayNum of drawDayNumbers) {
     let diff = dayNum - today;
@@ -81,13 +98,12 @@ function getNextDrawDate(drawDays: string[], drawTime: string) {
   const next = new Date(brazilNow);
   next.setUTCDate(brazilNow.getUTCDate() + daysUntilNext);
   next.setUTCHours(h + 3, m, 0, 0);
-
   return next;
 }
 
 function getIsLive(drawDays: string[], drawTime: string): boolean {
   const dayMap: Record<string, number> = {
-    'domingo': 0, 'sunday': 0,
+    'domingo': 0, 'sunday': 0, 'dom': 0,
     'segunda': 1, 'segunda-feira': 1, 'seg': 1, 'monday': 1,
     'terça': 2, 'terca': 2, 'ter': 2, 'tuesday': 2,
     'quarta': 3, 'qua': 3, 'wednesday': 3,
@@ -107,18 +123,12 @@ function getIsLive(drawDays: string[], drawTime: string): boolean {
   return minutesFromMidnight >= drawMinutes - 30 && minutesFromMidnight <= drawMinutes + 90;
 }
 
-/**
- * Verifica se há sorteio ao vivo usando a data REAL informada pela Caixa
- * (dataProximoConcurso ou dataApuracao), eliminando falsos positivos
- * causados por remarcações (jogos do Brasil, feriados, etc.)
- */
 function getIsLiveVerified(data: any, drawTime: string): boolean {
   if (!data) return false;
   const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000;
   const now = new Date();
   const brazilNow = new Date(now.getTime() - BRAZIL_OFFSET_MS);
 
-  // Data de hoje no formato "DD/MM/YYYY" (formato Caixa)
   const dd    = brazilNow.getUTCDate().toString().padStart(2, '0');
   const mm    = (brazilNow.getUTCMonth() + 1).toString().padStart(2, '0');
   const yyyy  = brazilNow.getUTCFullYear();
@@ -128,16 +138,12 @@ function getIsLiveVerified(data: any, drawTime: string): boolean {
   const drawMinutes = h * 60 + m;
   const minutesNow  = brazilNow.getUTCHours() * 60 + brazilNow.getUTCMinutes();
 
-  // Caso 1: próximo concurso é hoje → janela: 30min antes até 90min depois
   if (data.dataProximoConcurso === todayStr) {
     return minutesNow >= drawMinutes - 30 && minutesNow <= drawMinutes + 90;
   }
-
-  // Caso 2: último sorteio foi hoje e ainda estamos na janela pós-sorteio
   if (data.dataApuracao === todayStr) {
     return minutesNow >= drawMinutes && minutesNow <= drawMinutes + 90;
   }
-
   return false;
 }
 
@@ -146,18 +152,14 @@ router.get("/", (req, res) => {
   res.json(LOTTERIES);
 });
 
-// GET /api/lotteries/live-status — DEVE ficar antes de /:id para não ser capturado pelo wildcard
-// Verifica se QUALQUER loteria está ao vivo agora
-// Usa pré-filtro por horário antes de chamar a Caixa, para evitar requests desnecessários
+// GET /api/lotteries/live-status
 router.get("/live-status", async (req, res) => {
-  // Pré-filtro rápido: quais loterias estão na janela de horário hoje?
   const candidates = LOTTERIES.filter(l => getIsLive(l.drawDays, l.drawTime));
 
   if (candidates.length === 0) {
     res.json({ isLive: false, activeLotteries: [] }); return;
   }
 
-  // Verificação real contra a API da Caixa (só para candidatas)
   const activeLotteries: string[] = [];
 
   await Promise.allSettled(
@@ -184,12 +186,11 @@ router.get("/:id", async (req, res) => {
 async function drawsHandler(req: any, res: any) {
   const lottery = LOTTERIES.find(l => l.id === req.params.id);
   if (!lottery) { res.status(404).json({ message: 'Lottery not found' }); return; }
-  
   try {
     const data = await fetchLatestDraw(req.params.id);
     const normalized = normalizeDrawData(data, req.params.id);
     res.json(normalized ? [normalized] : []);
-  } catch (error) {
+  } catch {
     res.json([]);
   }
 }
@@ -201,21 +202,24 @@ router.get("/:id/draws/:extra", drawsHandler);
 router.get("/:id/next-draw", async (req, res) => {
   const lottery = LOTTERIES.find(l => l.id === req.params.id);
   if (!lottery) { res.status(404).json({ message: 'Lottery not found' }); return; }
-  
-  const nextDrawDate = getNextDrawDate(lottery.drawDays, lottery.drawTime);
-  const now = new Date();
-  const diff = Math.max(0, nextDrawDate.getTime() - now.getTime());
-  
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
   try {
     const data = await fetchLatestDraw(req.params.id);
-    const contestNumber = data?.numero || data?.contestNumber || 1;
+    const caixaNextDate: string | null = data?.dataProximoConcurso || null;
+
+    // Usa data real da Caixa quando disponível (mais preciso, evita erros em feriados)
+    const nextDrawDate = getNextDrawDate(lottery.drawDays, lottery.drawTime, caixaNextDate);
+    const now = new Date();
+    const diff = Math.max(0, nextDrawDate.getTime() - now.getTime());
+
+    const days    = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours   = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    const contestNumber  = data?.numero || data?.contestNumber || 1;
     const estimatedPrize = formatBRL(data?.valorEstimadoProximoConcurso);
-    const isLive = getIsLiveVerified(data, lottery.drawTime);
+    const isLive         = getIsLiveVerified(data, lottery.drawTime);
 
     res.json({
       contestNumber: contestNumber + 1,
@@ -224,10 +228,18 @@ router.get("/:id/next-draw", async (req, res) => {
       timeRemaining: { days, hours, minutes, seconds },
       estimatedPrize,
       isLive,
-      nextDrawDateCaixa: data?.dataProximoConcurso || null,
+      nextDrawDateCaixa: caixaNextDate,
     });
   } catch {
-    const isLive = getIsLive(lottery.drawDays, lottery.drawTime);
+    // Fallback sem API da Caixa
+    const nextDrawDate = getNextDrawDate(lottery.drawDays, lottery.drawTime, null);
+    const now = new Date();
+    const diff = Math.max(0, nextDrawDate.getTime() - now.getTime());
+    const days    = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours   = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    const isLive  = getIsLive(lottery.drawDays, lottery.drawTime);
     res.json({
       contestNumber: 1,
       drawDate: nextDrawDate.toISOString(),
@@ -240,7 +252,7 @@ router.get("/:id/next-draw", async (req, res) => {
   }
 });
 
-// GET /api/lotteries/:id/prizes — dados reais de premiação da Caixa
+// GET /api/lotteries/:id/prizes
 router.get("/:id/prizes", async (req, res) => {
   const lottery = LOTTERIES.find(l => l.id === req.params.id);
   if (!lottery) { res.status(404).json({ message: 'Lottery not found' }); return; }
@@ -255,7 +267,6 @@ router.get("/:id/prizes", async (req, res) => {
     const drawDate        = data.dataApuracao || data.data || null;
     const accumulated     = data.acumulado ?? false;
 
-    // Normaliza premiacao de diferentes formatos da Caixa
     const rawPrizes: any[] = data.premiacao || data.premiacoes || data.listaRateioPremio || [];
 
     const prizes = rawPrizes.map((p: any, i: number) => {
@@ -286,8 +297,8 @@ router.get("/:id/prizes", async (req, res) => {
         : '—',
       prizes,
     });
-  } catch (err: any) {
-    res.status(503).json({ message: 'Erro ao buscar prêmios', error: err?.message });
+  } catch {
+    res.status(503).json({ message: 'Erro ao buscar prêmios.' });
   }
 });
 
@@ -300,13 +311,10 @@ router.get("/:id/frequency", async (req, res) => {
     const draws       = await fetchHistoricalDraws(req.params.id, 30);
     const frequencies = computeFrequencies(lottery.totalNumbers, draws);
 
-    // Metadados extras para visualização no frontend
     const hot  = frequencies.filter(f => f.temperature === 'hot');
     const cold = frequencies.filter(f => f.temperature === 'cold');
     const warm = frequencies.filter(f => f.temperature === 'warm');
 
-    // Responde com envelope enriquecido mas mantém compatibilidade:
-    // o campo `frequencies` é o array principal (mantém compat com código existente)
     res.json({
       frequencies,
       meta: {

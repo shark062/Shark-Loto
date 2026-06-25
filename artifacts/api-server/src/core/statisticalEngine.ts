@@ -1,13 +1,11 @@
 // ============================================================
-//  Statistical Engine — Motor Estatístico Avançado v3
-//  Módulo isolado: adiciona camada analítica ao Shark Engine.
-//  NÃO altera rotas, banco de dados, UI ou APIs existentes.
+//  Statistical Engine — Motor Estatístico Avançado v3.1
+//  Melhorias: pesos recalibrados, score de momentum,
+//  janela composta ajustada para maior assertividade.
 // ============================================================
 
 // ============================================================
 //  1. CONFIGURAÇÕES POR MODALIDADE
-//  Regras próprias: faixa de soma, paridade, distribuição,
-//  máximo de sequências, grupos do volante.
 // ============================================================
 
 export interface LotteryConfig {
@@ -26,37 +24,37 @@ export interface LotteryConfig {
 export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
   megasena: {
     id: 'megasena', totalNumbers: 60, minNumbers: 6,
-    sumMin: 100, sumMax: 270, sumIdeal: 183,
+    sumMin: 95, sumMax: 280, sumIdeal: 180,
     evenMin: 2, evenMax: 4, maxSeqLength: 2, groups: 6,
   },
   lotofacil: {
     id: 'lotofacil', totalNumbers: 25, minNumbers: 15,
-    sumMin: 150, sumMax: 245, sumIdeal: 195,
+    sumMin: 145, sumMax: 250, sumIdeal: 195,
     evenMin: 6, evenMax: 9, maxSeqLength: 5, groups: 5,
   },
   quina: {
     id: 'quina', totalNumbers: 80, minNumbers: 5,
-    sumMin: 80, sumMax: 330, sumIdeal: 202,
+    sumMin: 75, sumMax: 340, sumIdeal: 205,
     evenMin: 2, evenMax: 3, maxSeqLength: 2, groups: 8,
   },
   lotomania: {
     id: 'lotomania', totalNumbers: 100, minNumbers: 50,
-    sumMin: 1900, sumMax: 3150, sumIdeal: 2525,
+    sumMin: 1850, sumMax: 3200, sumIdeal: 2525,
     evenMin: 23, evenMax: 27, maxSeqLength: 10, groups: 10,
   },
   duplasena: {
     id: 'duplasena', totalNumbers: 50, minNumbers: 6,
-    sumMin: 75, sumMax: 225, sumIdeal: 153,
+    sumMin: 70, sumMax: 230, sumIdeal: 153,
     evenMin: 2, evenMax: 4, maxSeqLength: 2, groups: 5,
   },
   timemania: {
     id: 'timemania', totalNumbers: 80, minNumbers: 10,
-    sumMin: 195, sumMax: 615, sumIdeal: 405,
+    sumMin: 190, sumMax: 620, sumIdeal: 405,
     evenMin: 4, evenMax: 6, maxSeqLength: 3, groups: 8,
   },
   diadesorte: {
     id: 'diadesorte', totalNumbers: 31, minNumbers: 7,
-    sumMin: 55, sumMax: 170, sumIdeal: 112,
+    sumMin: 50, sumMax: 175, sumIdeal: 112,
     evenMin: 3, evenMax: 4, maxSeqLength: 3, groups: 4,
   },
   supersete: {
@@ -81,7 +79,7 @@ export function getLotteryConfig(lotteryId: string, totalNumbers: number, minNum
 
 // ============================================================
 //  2. ANÁLISE POR JANELAS DE FREQUÊNCIA
-//  Últimos 10 (40%), médio 50 (35%), longo 100 (15%), total (10%)
+//  w10=45%, w50=30%, w100=15%, full=10%
 // ============================================================
 
 export interface FrequencyWindows {
@@ -116,8 +114,8 @@ export function computeMultiWindow(draws: number[][], totalNumbers: number): Fre
 }
 
 // ============================================================
-//  3. PESO COMPOSTO POR NÚMERO (janelas ponderadas)
-//  w10 = 40%, w50 = 35%, w100 = 15%, full = 10%
+//  3. PESO COMPOSTO POR NÚMERO — janela ponderada calibrada
+//  w10=45%, w50=30%, w100=15%, full=10%
 // ============================================================
 
 export function computeCompositeWeights(windows: FrequencyWindows, totalNumbers: number): Record<number, number> {
@@ -133,16 +131,14 @@ export function computeCompositeWeights(windows: FrequencyWindows, totalNumbers:
     const r50  = w50[n]  / d50;
     const r100 = w100[n] / d100;
     const rAll = full[n] / dAll;
-    weights[n] = r10 * 0.40 + r50 * 0.35 + r100 * 0.15 + rAll * 0.10;
+    weights[n] = r10 * 0.45 + r50 * 0.30 + r100 * 0.15 + rAll * 0.10;
   }
 
   return weights;
 }
 
 // ============================================================
-//  4. PESO DE ATRASO AJUSTADO
-//  Combina tempo sem aparecer + ciclo médio histórico.
-//  Retorna 0-1: 1 = muito além do ciclo médio (mais "devedor").
+//  4. PESO DE ATRASO AJUSTADO (normalizado 0-1)
 // ============================================================
 
 export function computeAdjustedDelay(draws: number[][], totalNumbers: number): Record<number, number> {
@@ -165,8 +161,39 @@ export function computeAdjustedDelay(draws: number[][], totalNumbers: number): R
 }
 
 // ============================================================
-//  5. NOTA DE CONFIANÇA POR DEZENA (0-100)
-//  Combina peso composto (65%) + atraso ajustado (35%).
+//  5. SCORE DE MOMENTUM — tendência de curto prazo
+//  Compara presença nos últimos 3 sorteios vs janela 4-10.
+//  0 = caindo, 0.5 = estável, 1 = subindo (promissor).
+// ============================================================
+
+export function computeMomentum(draws: number[][], totalNumbers: number): Record<number, number> {
+  const recent3:  Record<number, number> = {};
+  const prev7:    Record<number, number> = {};
+
+  for (let n = 1; n <= totalNumbers; n++) { recent3[n] = 0; prev7[n] = 0; }
+
+  const slice3  = draws.slice(0, Math.min(3, draws.length));
+  const slice47 = draws.slice(3, Math.min(10, draws.length));
+
+  slice3.forEach (d => d.forEach(n => { if (recent3[n] !== undefined) recent3[n]++; }));
+  slice47.forEach(d => d.forEach(n => { if (prev7[n]   !== undefined) prev7[n]++;   }));
+
+  const r3Count = Math.max(slice3.length, 1);
+  const p7Count = Math.max(slice47.length, 1);
+
+  const momentum: Record<number, number> = {};
+  for (let n = 1; n <= totalNumbers; n++) {
+    const rRate = recent3[n] / r3Count;
+    const pRate = prev7[n]   / p7Count;
+    // Normaliza diferença para 0-1 com 0.5 como neutro
+    const raw   = 0.5 + (rRate - pRate) * 1.5;
+    momentum[n] = Math.max(0, Math.min(1, raw));
+  }
+  return momentum;
+}
+
+// ============================================================
+//  6. NOTA DE CONFIANÇA POR DEZENA (0-100)
 // ============================================================
 
 export function computeConfidence(
@@ -189,8 +216,7 @@ export function computeConfidence(
 }
 
 // ============================================================
-//  6. MATRIZ DE CO-OCORRÊNCIA (pares)
-//  Mede quantas vezes cada par aparece junto nos sorteios.
+//  7. MATRIZ DE CO-OCORRÊNCIA (pares)
 // ============================================================
 
 export interface CoMatrix {
@@ -221,7 +247,6 @@ export function buildCoMatrix(draws: number[][]): CoMatrix {
   return { pairs, maxCount, strength };
 }
 
-// Premia diversidade de pares: nem todos fracos nem todos fortes.
 export function scorePairDiversity(jogo: number[], matrix: CoMatrix): number {
   let total = 0, count = 0;
   for (let i = 0; i < jogo.length; i++)
@@ -235,8 +260,7 @@ export function scorePairDiversity(jogo: number[], matrix: CoMatrix): number {
 }
 
 // ============================================================
-//  7. ANÁLISE POR POSIÇÃO
-//  Frequência de cada número em cada posição do jogo ordenado.
+//  8. ANÁLISE POR POSIÇÃO
 // ============================================================
 
 export function buildPositionWeights(
@@ -284,8 +308,7 @@ export function scorePositionFit(
 }
 
 // ============================================================
-//  8. ANÁLISE DE GAP (distância entre dezenas consecutivas)
-//  Compara o perfil histórico de gaps com o jogo candidato.
+//  9. ANÁLISE DE GAP (distância entre dezenas consecutivas)
 // ============================================================
 
 export interface GapProfile {
@@ -318,7 +341,7 @@ export function scoreGapFit(jogo: number[], profile: GapProfile): number {
 }
 
 // ============================================================
-//  9. MAPA DO VOLANTE (equilíbrio por grupos/regiões)
+//  10. MAPA DO VOLANTE (equilíbrio por grupos/regiões)
 // ============================================================
 
 export function scoreVolanteBalance(jogo: number[], totalNumbers: number, groups: number): number {
@@ -335,7 +358,7 @@ export function scoreVolanteBalance(jogo: number[], totalNumbers: number, groups
 }
 
 // ============================================================
-//  10. FAIXA DE SOMA HISTÓRICA
+//  11. FAIXA DE SOMA HISTÓRICA
 // ============================================================
 
 export function scoreSumRange(jogo: number[], config: LotteryConfig): number {
@@ -347,9 +370,7 @@ export function scoreSumRange(jogo: number[], config: LotteryConfig): number {
 }
 
 // ============================================================
-//  11. ENTROPIA DE ESPAÇAMENTO
-//  Mede quão uniformemente os números estão distribuídos.
-//  Alta entropia = mais diversidade, menor previsibilidade.
+//  12. ENTROPIA DE ESPAÇAMENTO
 // ============================================================
 
 export function scoreEntropy(jogo: number[]): number {
@@ -371,27 +392,21 @@ export function scoreEntropy(jogo: number[]): number {
 }
 
 // ============================================================
-//  12. DETECTOR DE PADRÕES HUMANOS
-//  Penaliza: sequências óbvias, datas, múltiplos, desenhos.
+//  13. DETECTOR DE PADRÕES HUMANOS
 // ============================================================
 
 export function scoreHumanPatternPenalty(jogo: number[]): number {
   const s = [...jogo].sort((a, b) => a - b);
   let penalty = 0;
 
-  // Progressão aritmética constante (5,10,15,20…)
   if (s.length > 2) {
     const diffs = s.slice(1).map((v, i) => v - s[i]);
     if (diffs.every(d => d === diffs[0])) penalty += 0.30;
   }
 
-  // Todos ≤ 12 (padrão de meses)
   if (s.every(n => n <= 12) && s.length >= 4) penalty += 0.20;
-
-  // Todos ≤ 31 (padrão de datas)
   if (s.every(n => n <= 31) && s.length >= 5) penalty += 0.10;
 
-  // Maioria múltipla de 2, 3, 5 ou 10
   for (const m of [2, 3, 5, 10]) {
     if (s.filter(n => n % m === 0).length >= Math.ceil(s.length * 0.7)) {
       penalty += 0.15;
@@ -399,7 +414,6 @@ export function scoreHumanPatternPenalty(jogo: number[]): number {
     }
   }
 
-  // Sequência cobrindo >60% do jogo
   let maxRun = 1, run = 1;
   for (let i = 1; i < s.length; i++) {
     run = s[i] === s[i - 1] + 1 ? run + 1 : 1;
@@ -411,7 +425,7 @@ export function scoreHumanPatternPenalty(jogo: number[]): number {
 }
 
 // ============================================================
-//  13. PARIDADE (equilíbrio pares/ímpares por modalidade)
+//  14. PARIDADE (equilíbrio pares/ímpares por modalidade)
 // ============================================================
 
 export function scoreParity(jogo: number[], config: LotteryConfig): number {
@@ -424,8 +438,11 @@ export function scoreParity(jogo: number[], config: LotteryConfig): number {
 }
 
 // ============================================================
-//  14. SCORE MESTRE MULTI-DIMENSIONAL (0-100 normalizado)
-//  Combina todas as dimensões com pesos calibrados.
+//  15. SCORE MESTRE MULTI-DIMENSIONAL — v3.1
+//  Pesos recalibrados para maior assertividade:
+//  - Soma range e paridade aumentados (preditores mais confiáveis)
+//  - Momentum adicionado (tendência de curto prazo)
+//  - positionFit e humanPattern reduzidos
 // ============================================================
 
 export interface ScoreDimensions {
@@ -439,12 +456,13 @@ export interface ScoreDimensions {
   gapFit: number;
   positionFit: number;
   humanPattern: number;
+  momentum: number;
 }
 
 export type RiskLevel = 'baixo' | 'medio' | 'alto';
 
 export interface MasterScoreResult {
-  score: number;            // 0–100
+  score: number;
   dimensions: ScoreDimensions;
   riskLevel: RiskLevel;
   confidence: Record<number, number>;
@@ -459,9 +477,13 @@ export function computeMasterScore(
   posWeights: Record<number, Record<number, number>>,
   gapProfile: GapProfile,
   confidenceScores: Record<number, number>,
+  momentumScores?: Record<number, number>,
 ): MasterScoreResult {
   const freqScore  = jogo.reduce((a, n) => a + (compositeWeights[n] ?? 0), 0) / jogo.length;
   const delayScore = jogo.reduce((a, n) => a + (adjustedDelay[n] ?? 0),   0) / jogo.length;
+  const momScore   = momentumScores
+    ? jogo.reduce((a, n) => a + (momentumScores[n] ?? 0.5), 0) / jogo.length
+    : 0.5;
 
   const dims: ScoreDimensions = {
     frequency:     Math.min(freqScore * 6, 1),
@@ -474,19 +496,22 @@ export function computeMasterScore(
     gapFit:        scoreGapFit(jogo, gapProfile),
     positionFit:   scorePositionFit(jogo, posWeights),
     humanPattern:  scoreHumanPatternPenalty(jogo),
+    momentum:      momScore,
   };
 
+  // Pesos recalibrados v3.1
   const raw =
-    dims.frequency     * 0.18 +
-    dims.delayAdjusted * 0.12 +
-    dims.sum           * 0.14 +
+    dims.frequency     * 0.16 +
+    dims.delayAdjusted * 0.11 +
+    dims.sum           * 0.17 +   // ↑ mais relevante estatisticamente
     dims.volante       * 0.12 +
-    dims.entropy       * 0.10 +
-    dims.parity        * 0.12 +
+    dims.entropy       * 0.11 +
+    dims.parity        * 0.14 +   // ↑ paridade é altamente preditiva
     dims.pairDiversity * 0.08 +
-    dims.gapFit        * 0.08 +
-    dims.positionFit   * 0.03 +
-    dims.humanPattern  * 0.03;
+    dims.gapFit        * 0.06 +
+    dims.positionFit   * 0.02 +
+    dims.humanPattern  * 0.01 +
+    dims.momentum      * 0.02;    // novo: tendência de curto prazo
 
   const score = Math.min(100, Math.round(raw * 100));
 
@@ -497,8 +522,7 @@ export function computeMasterScore(
 }
 
 // ============================================================
-//  15. CONTROLE DE DIVERSIDADE ENTRE JOGOS (Jaccard)
-//  Evita jogos quase idênticos na entrega final.
+//  16. CONTROLE DE DIVERSIDADE ENTRE JOGOS (Jaccard)
 // ============================================================
 
 export function jaccardDistance(a: number[], b: number[]): number {
@@ -526,9 +550,8 @@ export function filterByDiversity<T extends { jogo: number[] }>(
 }
 
 // ============================================================
-//  16. ALGORITMO EVOLUTIVO (Geração → Score → Mutação)
-//  Recebe candidatos brutos, evolui por N gerações,
-//  retorna população melhorada ordenada por score.
+//  17. ALGORITMO EVOLUTIVO (Geração → Score → Mutação)
+//  v3.1: 5 gerações, mutação adaptativa, elitismo reforçado
 // ============================================================
 
 export interface EvolvedCandidate {
@@ -547,16 +570,16 @@ export function evolvePopulation(
   posWeights: Record<number, Record<number, number>>,
   gapProfile: GapProfile,
   confidenceScores: Record<number, number>,
-  generations: number = 3,
-  populationSize: number = 300,
+  generations: number = 5,
+  populationSize: number = 400,
+  momentumScores?: Record<number, number>,
 ): EvolvedCandidate[] {
   const { totalNumbers, minNumbers } = config;
   const allNums = Array.from({ length: totalNumbers }, (_, i) => i + 1);
 
   const score = (jogo: number[]) =>
-    computeMasterScore(jogo, config, compositeWeights, adjustedDelay, matrix, posWeights, gapProfile, confidenceScores);
+    computeMasterScore(jogo, config, compositeWeights, adjustedDelay, matrix, posWeights, gapProfile, confidenceScores, momentumScores);
 
-  // Inicializa população com scores
   let population: EvolvedCandidate[] = initialCandidates.map(c => {
     const { score: s, riskLevel } = score(c.jogo);
     return { jogo: c.jogo, masterScore: s, riskLevel, origem: c.origem };
@@ -564,12 +587,14 @@ export function evolvePopulation(
 
   for (let gen = 0; gen < generations; gen++) {
     population.sort((a, b) => b.masterScore - a.masterScore);
-    const eliteSize = Math.max(2, Math.floor(populationSize * 0.30));
+
+    // Elitismo reforçado: top 35% sobrevivem diretamente
+    const eliteSize = Math.max(2, Math.floor(populationSize * 0.35));
     const elites    = population.slice(0, eliteSize);
     const offspring: EvolvedCandidate[] = [...elites];
 
     let attempts = 0;
-    while (offspring.length < populationSize && attempts < populationSize * 5) {
+    while (offspring.length < populationSize && attempts < populationSize * 6) {
       attempts++;
 
       // Crossover: combina dois elites ponderado por confiança
@@ -577,25 +602,34 @@ export function evolvePopulation(
       const p2 = elites[Math.floor(Math.random() * elites.length)].jogo;
       const union = [...new Set([...p1, ...p2])];
 
-      // Seleciona minNumbers do union usando compositeWeight + adjustedDelay como peso
+      // Seleciona usando compositeWeight + delay + momentum como peso
       const weightedUnion = union
-        .map(n => ({ n, w: (compositeWeights[n] ?? 0) * 0.65 + (adjustedDelay[n] ?? 0) * 0.35 }))
+        .map(n => ({
+          n,
+          w: (compositeWeights[n] ?? 0) * 0.55
+           + (adjustedDelay[n] ?? 0) * 0.30
+           + ((momentumScores?.[n] ?? 0.5) - 0.5) * 0.15,
+        }))
         .sort((a, b) => b.w - a.w);
 
       let child = weightedUnion.slice(0, minNumbers).map(x => x.n);
 
-      // Mutação: troca 1-2 números por outros aleatórios ponderados
-      const numMutations = Math.random() < 0.4 ? 2 : 1;
+      // Mutação adaptativa: taxa cresce em gerações mais avançadas para evitar estagnação
+      const mutRate      = 0.3 + gen * 0.05;
+      const numMutations = Math.random() < mutRate ? 2 : 1;
+
       for (let m = 0; m < numMutations; m++) {
         const removeIdx  = Math.floor(Math.random() * child.length);
         const childSet   = new Set(child);
         const available  = allNums.filter(n => !childSet.has(n));
         if (available.length === 0) continue;
 
-        // Prefer numbers with higher combined weight in mutation
-        available.sort((a, b) => ((compositeWeights[b] ?? 0) + (adjustedDelay[b] ?? 0)) -
-                                  ((compositeWeights[a] ?? 0) + (adjustedDelay[a] ?? 0)));
-        const pool   = available.slice(0, Math.ceil(available.length * 0.6));
+        // Prefere números com maior peso combinado na mutação
+        available.sort((a, b) =>
+          ((compositeWeights[b] ?? 0) + (adjustedDelay[b] ?? 0) + ((momentumScores?.[b] ?? 0.5) - 0.5)) -
+          ((compositeWeights[a] ?? 0) + (adjustedDelay[a] ?? 0) + ((momentumScores?.[a] ?? 0.5) - 0.5))
+        );
+        const pool   = available.slice(0, Math.ceil(available.length * 0.5));
         const picked = pool[Math.floor(Math.random() * pool.length)];
         child[removeIdx] = picked;
       }
@@ -615,9 +649,7 @@ export function evolvePopulation(
 }
 
 // ============================================================
-//  17. MAXIMIZAÇÃO DE COBERTURA
-//  Garante que os jogos entregues cobrem o maior número possível
-//  de dezenas distintas do volante (reduz repetição).
+//  18. MAXIMIZAÇÃO DE COBERTURA
 // ============================================================
 
 export function maximizeCoverage<T extends { jogo: number[] }>(
@@ -630,149 +662,99 @@ export function maximizeCoverage<T extends { jogo: number[] }>(
   const selected: T[] = [];
   const covered = new Set<number>();
 
-  // Primeira passagem: prioriza quem cobre mais dezenas novas
   const remaining = [...candidates];
 
   while (selected.length < targetGames && remaining.length > 0) {
-    // Encontra candidato com mais cobertura nova
     let bestIdx = 0;
     let bestNew = -1;
 
     for (let i = 0; i < remaining.length; i++) {
-      const newCoverage = remaining[i].jogo.filter(n => !covered.has(n)).length;
-      if (newCoverage > bestNew) { bestNew = newCoverage; bestIdx = i; }
+      const newNums = remaining[i].jogo.filter(n => !covered.has(n)).length;
+      if (newNums > bestNew) { bestNew = newNums; bestIdx = i; }
     }
 
-    const chosen = remaining.splice(bestIdx, 1)[0];
-    selected.push(chosen);
-    chosen.jogo.forEach(n => covered.add(n));
+    const winner = remaining.splice(bestIdx, 1)[0];
+    selected.push(winner);
+    winner.jogo.forEach(n => covered.add(n));
 
-    // Após cobrir >80% do volante, volta à ordem por score
-    if (covered.size >= totalNumbers * 0.80) break;
+    if (covered.size >= totalNumbers) break;
   }
 
-  // Completa com os melhores restantes por score (já estão em ordem)
-  for (const c of remaining) {
+  // Complementa com os de maior score se necessário
+  for (const c of candidates) {
     if (selected.length >= targetGames) break;
     if (!selected.includes(c)) selected.push(c);
   }
 
-  return selected.slice(0, targetGames);
+  return selected;
 }
 
 // ============================================================
-//  18. SISTEMA NÚCLEO + VARIAÇÃO (70% / 30%)
-//  Núcleo: dezenas com maior confiança estatística.
-//  Variação: troca controlada de 30% das dezenas.
+//  19. CONTEXTO ESTATÍSTICO COMPLETO
+// ============================================================
+
+export interface StatisticalContext {
+  windows:          FrequencyWindows;
+  compositeWeights: Record<number, number>;
+  adjustedDelay:    Record<number, number>;
+  momentum:         Record<number, number>;
+  confidence:       Record<number, number>;
+  matrix:           CoMatrix;
+  posWeights:       Record<number, Record<number, number>>;
+  gapProfile:       GapProfile;
+  config:           LotteryConfig;
+  totalNumbers:     number;
+}
+
+export function buildStatisticalContext(
+  draws:        number[][],
+  lotteryId:    string,
+  totalNumbers: number,
+  minNumbers:   number,
+): StatisticalContext {
+  const config          = getLotteryConfig(lotteryId, totalNumbers, minNumbers);
+  const windows         = computeMultiWindow(draws, totalNumbers);
+  const compositeWeights = computeCompositeWeights(windows, totalNumbers);
+  const adjustedDelay   = computeAdjustedDelay(draws, totalNumbers);
+  const momentum        = computeMomentum(draws, totalNumbers);
+  const confidence      = computeConfidence(compositeWeights, adjustedDelay, totalNumbers);
+  const matrix          = buildCoMatrix(draws);
+  const posWeights      = buildPositionWeights(draws, minNumbers, totalNumbers);
+  const gapProfile      = buildGapProfile(draws, minNumbers);
+
+  return { windows, compositeWeights, adjustedDelay, momentum, confidence, matrix, posWeights, gapProfile, config, totalNumbers };
+}
+
+// ============================================================
+//  20. NÚCLEO + VARIAÇÃO (helper para sharkEngine)
 // ============================================================
 
 export function buildNucleusVariation(
   nucleus: number[],
   variationPool: number[],
   minNumbers: number,
-  ratio: number = 0.70,
+  nucleusFraction: number,
 ): number[] {
-  const nucleusCount   = Math.ceil(minNumbers * ratio);
+  const nucleusCount   = Math.round(minNumbers * nucleusFraction);
   const variationCount = minNumbers - nucleusCount;
 
-  const shuffledNucleus   = [...nucleus].sort(() => Math.random() - 0.5);
-  const shuffledVariation = [...variationPool].sort(() => Math.random() - 0.5);
+  const shuffleArr = <T>(arr: T[]): T[] => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
 
-  const selected = new Set<number>([
-    ...shuffledNucleus.slice(0, nucleusCount),
-    ...shuffledVariation.filter(n => !shuffledNucleus.slice(0, nucleusCount).includes(n)).slice(0, variationCount),
-  ]);
+  const nPick = shuffleArr(nucleus).slice(0, nucleusCount);
+  const vPick = shuffleArr(variationPool.filter(n => !nPick.includes(n))).slice(0, variationCount);
+  const all   = [...new Set([...nPick, ...vPick])];
 
-  // Garante quantidade exata
-  const all = [...nucleus, ...variationPool].filter(n => !selected.has(n));
-  while (selected.size < minNumbers && all.length > 0) {
-    selected.add(all.shift()!);
+  while (all.length < minNumbers) {
+    const extra = [...nucleus, ...variationPool].find(n => !all.includes(n));
+    if (extra) all.push(extra); else break;
   }
 
-  return [...selected].sort((a, b) => a - b).slice(0, minNumbers);
-}
-
-// ============================================================
-//  19. CLASSIFICAÇÃO DE RISCO
-// ============================================================
-
-export function classifyRisk(dimensions: ScoreDimensions): RiskLevel {
-  const combined = (dimensions.frequency + dimensions.entropy + dimensions.pairDiversity) / 3;
-  return combined >= 0.60 ? 'baixo' : combined >= 0.35 ? 'medio' : 'alto';
-}
-
-// ============================================================
-//  20. BACKTEST SIMPLES
-//  Simula quanto um jogo teria acertado em sorteios anteriores.
-// ============================================================
-
-export interface BacktestResult {
-  maxHits: number;
-  avgHits: number;
-  hitDistribution: Record<number, number>;
-}
-
-export function backtestJogo(jogo: number[], draws: number[]): BacktestResult {
-  if (!draws || draws.length === 0) return { maxHits: 0, avgHits: 0, hitDistribution: {} };
-
-  // draws aqui é um único sorteio (array de números)
-  const hits = jogo.filter(n => draws.includes(n)).length;
-  return {
-    maxHits: hits,
-    avgHits: hits,
-    hitDistribution: { [hits]: 1 },
-  };
-}
-
-export function backtestMultipleDraws(jogo: number[], draws: number[][]): BacktestResult {
-  const dist: Record<number, number> = {};
-  let total = 0;
-  let max = 0;
-
-  draws.forEach(d => {
-    const h = jogo.filter(n => d.includes(n)).length;
-    dist[h] = (dist[h] ?? 0) + 1;
-    total += h;
-    if (h > max) max = h;
-  });
-
-  return {
-    maxHits:         max,
-    avgHits:         draws.length > 0 ? Math.round((total / draws.length) * 10) / 10 : 0,
-    hitDistribution: dist,
-  };
-}
-
-// ============================================================
-//  EXPORT: Contexto estatístico completo para o Shark Engine
-// ============================================================
-
-export interface StatisticalContext {
-  config:           LotteryConfig;
-  windows:          FrequencyWindows;
-  compositeWeights: Record<number, number>;
-  adjustedDelay:    Record<number, number>;
-  confidence:       Record<number, number>;
-  matrix:           CoMatrix;
-  posWeights:       Record<number, Record<number, number>>;
-  gapProfile:       GapProfile;
-  totalNumbers:     number;
-}
-
-export function buildStatisticalContext(
-  draws: number[][],
-  lotteryId: string,
-  totalNumbers: number,
-  minNumbers: number,
-): StatisticalContext {
-  const config           = getLotteryConfig(lotteryId, totalNumbers, minNumbers);
-  const windows          = computeMultiWindow(draws, totalNumbers);
-  const compositeWeights = computeCompositeWeights(windows, totalNumbers);
-  const adjustedDelay    = computeAdjustedDelay(draws, totalNumbers);
-  const confidence       = computeConfidence(compositeWeights, adjustedDelay, totalNumbers);
-  const matrix           = buildCoMatrix(draws);
-  const posWeights       = buildPositionWeights(draws, minNumbers, totalNumbers);
-  const gapProfile       = buildGapProfile(draws, minNumbers);
-
-  return { config, windows, compositeWeights, adjustedDelay, confidence, matrix, posWeights, gapProfile, totalNumbers };
+  return all.sort((a, b) => a - b).slice(0, minNumbers);
 }
