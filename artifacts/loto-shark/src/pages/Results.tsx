@@ -10,11 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLotteryTypes } from "@/hooks/useLotteryData";
 import { jsPDF } from "jspdf";
-import logoPng from "@assets/Logo_Futurista_da_Shark_Loterias_1757013773517-B635QT2F_1767439134606.png";
 import { 
   Trophy, 
   Medal,
-  Award,
   BarChart3,
   Download,
   Tv2,
@@ -22,11 +20,12 @@ import {
   CheckCircle,
   XCircle,
   DollarSign,
-  Search,
-  Target,
   Mic,
   MicOff,
   Radio,
+  ClipboardPaste,
+  Copy,
+  CopyCheck,
 } from "lucide-react";
 
 // @caixaloterias — canal dedicado a sorteios (2600+ transmissões), não o institucional
@@ -330,6 +329,142 @@ function LiveSorteioCard({ userGames }: { userGames: any[] }) {
   );
 }
 
+function parseDezenaSequences(raw: string): number[][] {
+  return raw
+    .split('\n')
+    .map(line => line.trim().replace(/\s+/g, ''))
+    .filter(line => line.length >= 4 && /^\d+$/.test(line))
+    .map(line => {
+      const nums: number[] = [];
+      for (let i = 0; i < line.length - 1; i += 2) {
+        const n = parseInt(line.slice(i, i + 2), 10);
+        if (n >= 1 && n <= 99) nums.push(n);
+      }
+      return [...new Set(nums)].sort((a, b) => a - b);
+    })
+    .filter(nums => nums.length >= 2);
+}
+
+function ImportadorDezenas() {
+  const [rawText, setRawText] = useState('');
+  const [jogos, setJogos] = useState<number[][]>([]);
+  const [copiadoIdx, setCopiadoIdx] = useState<number | null>(null);
+  const [copiadoTodos, setCopiadoTodos] = useState(false);
+
+  const importar = () => {
+    const parsed = parseDezenaSequences(rawText);
+    setJogos(parsed);
+  };
+
+  const copiarJogo = (nums: number[], idx: number) => {
+    const texto = nums.map(n => n.toString().padStart(2, '0')).join(' ');
+    navigator.clipboard.writeText(texto).then(() => {
+      setCopiadoIdx(idx);
+      setTimeout(() => setCopiadoIdx(null), 1800);
+    });
+  };
+
+  const copiarTodos = () => {
+    const texto = jogos
+      .map(nums => nums.map(n => n.toString().padStart(2, '0')).join(' '))
+      .join('\n');
+    navigator.clipboard.writeText(texto).then(() => {
+      setCopiadoTodos(true);
+      setTimeout(() => setCopiadoTodos(false), 1800);
+    });
+  };
+
+  return (
+    <Card className="bg-white/[0.04] border border-primary/30 mb-6">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-primary flex items-center gap-2 text-base">
+          <ClipboardPaste className="h-5 w-5" />
+          Importar Dezenas Geradas
+        </CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Cole sequências de dezenas coladas (ex: <span className="font-mono text-primary/80">0203040506...</span>), uma por linha. As dezenas serão separadas e formatadas para copiar nas loterias alternativas.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <textarea
+          className="w-full rounded-lg bg-black/30 border border-white/10 text-xs font-mono text-foreground p-3 min-h-[120px] resize-y focus:outline-none focus:border-primary/50 placeholder:text-muted-foreground/50"
+          placeholder={"Cole as sequências aqui, uma por linha:\n0203040506080910111216181920212225\n0102040508091011131617181921232425\n..."}
+          value={rawText}
+          onChange={e => setRawText(e.target.value)}
+        />
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            onClick={importar}
+            disabled={!rawText.trim()}
+            className="bg-primary hover:bg-primary/80 text-black text-xs font-semibold gap-1.5"
+          >
+            <ClipboardPaste className="h-3.5 w-3.5" />
+            Importar e Formatar
+          </Button>
+          {jogos.length > 0 && (
+            <Button
+              onClick={copiarTodos}
+              variant="outline"
+              className="border-primary/40 text-primary hover:bg-primary/10 text-xs gap-1.5"
+            >
+              {copiadoTodos ? <CopyCheck className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+              {copiadoTodos ? 'Copiado!' : `Copiar Todos (${jogos.length})`}
+            </Button>
+          )}
+          {jogos.length > 0 && (
+            <Button
+              onClick={() => { setJogos([]); setRawText(''); }}
+              variant="ghost"
+              className="text-muted-foreground text-xs"
+            >
+              Limpar
+            </Button>
+          )}
+        </div>
+
+        {jogos.length > 0 && (
+          <div className="space-y-2 mt-1">
+            <p className="text-xs text-muted-foreground">{jogos.length} jogo{jogos.length !== 1 ? 's' : ''} importado{jogos.length !== 1 ? 's' : ''}</p>
+            {jogos.map((nums, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-2 rounded-lg bg-black/30 border border-white/10 px-3 py-2"
+              >
+                <span className="text-xs text-muted-foreground w-5 shrink-0 font-mono">{idx + 1}.</span>
+                <div className="flex flex-wrap gap-1 flex-1">
+                  {nums.map(n => (
+                    <img
+                      key={n}
+                      src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`}
+                      alt={n.toString().padStart(2, '0')}
+                      draggable={false}
+                      className="w-7 h-7 [filter:drop-shadow(0_0_4px_rgba(0,220,255,0.7))]"
+                    />
+                  ))}
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {nums.map(n => n.toString().padStart(2, '0')).join(' ')}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => copiarJogo(nums, idx)}
+                    className="h-6 px-2 text-[10px] gap-1 text-primary hover:text-primary/80"
+                  >
+                    {copiadoIdx === idx ? <CopyCheck className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+                    {copiadoIdx === idx ? 'Copiado' : 'Copiar'}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Results() {
   const queryClient = useQueryClient();
   const [filterLottery, setFilterLottery] = useState<string>('all');
@@ -422,11 +557,6 @@ export default function Results() {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
-      try {
-        const imgWidth = 120;
-        const imgHeight = 120;
-        doc.addImage(logoPng, "PNG", (pageWidth - imgWidth) / 2, (pageHeight - imgHeight) / 2, imgWidth, imgHeight, undefined, 'FAST');
-      } catch (e) {}
 
       doc.setFontSize(22);
       doc.setTextColor(0, 150, 255);
@@ -517,6 +647,8 @@ export default function Results() {
             </CardContent>
           </Card>
         )}
+
+        <ImportadorDezenas />
 
         <Card className="bg-white/[0.04] mb-4 p-3">
           <div className="grid grid-cols-1 gap-2">
