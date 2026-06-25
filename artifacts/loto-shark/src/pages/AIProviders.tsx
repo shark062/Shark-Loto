@@ -51,13 +51,13 @@ const PROVIDER_TYPES: { type: AIProviderType; label: string; color: string; mode
     type: "anthropic",
     label: "Anthropic (Claude)",
     color: "text-orange-400",
-    models: ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307", "claude-3-opus-20240229"],
+    models: ["claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-haiku-20240307", "claude-3-opus-20240229"],
   },
   {
     type: "gemini",
     label: "Google Gemini",
     color: "text-blue-400",
-    models: ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"],
+    models: ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"],
   },
   {
     type: "deepseek",
@@ -69,13 +69,19 @@ const PROVIDER_TYPES: { type: AIProviderType; label: string; color: string; mode
     type: "groq",
     label: "Groq (Ultra-rápido)",
     color: "text-yellow-400",
-    models: ["llama-3.1-8b-instant", "llama-3.1-70b-versatile", "mixtral-8x7b-32768"],
+    models: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
   },
   {
     type: "mistral",
     label: "Mistral",
     color: "text-red-400",
     models: ["mistral-small-latest", "mistral-medium-latest", "mistral-large-latest"],
+  },
+  {
+    type: "cohere",
+    label: "Cohere",
+    color: "text-pink-400",
+    models: ["command-r-plus", "command-r", "command-light"],
   },
   {
     type: "openrouter",

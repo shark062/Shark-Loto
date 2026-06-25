@@ -51,14 +51,25 @@ export const PROVIDER_ENV_KEYS: Record<string, string> = {
 };
 
 /**
- * Retorna a chave de API lendo SEMPRE do process.env no momento da chamada.
- * Isso garante que atualizar a variável de ambiente no servidor (Render, Replit, etc.)
- * e reiniciar é suficiente — sem precisar sincronizar com o banco.
+ * Retorna a chave de API: primeiro tenta a chave salva no banco (provider.apiKey),
+ * e cai no process.env como fallback se a chave salva for "__env__" ou vazia.
  */
 export function getEffectiveApiKey(type: string): string | null {
   const envVar = PROVIDER_ENV_KEYS[type];
   if (!envVar) return null;
   return process.env[envVar] || null;
+}
+
+/**
+ * Retorna a chave real de um provider específico:
+ * - Se o provider tem chave salva no banco (não "__env__"), usa ela.
+ * - Caso contrário, lê do process.env.
+ */
+export function getProviderApiKey(provider: ProviderConfig): string | null {
+  if (provider.apiKey && provider.apiKey !== "__env__") {
+    return provider.apiKey;
+  }
+  return getEffectiveApiKey(provider.type);
 }
 
 // ─── Default base URLs per provider type ─────────────────────────────────────
@@ -70,7 +81,7 @@ const DEFAULT_URLS: Record<string, string> = {
   deepseek:   "https://api.deepseek.com/v1",
   groq:       "https://api.groq.com/openai/v1",
   mistral:    "https://api.mistral.ai/v1",
-  cohere:     "https://api.cohere.com/v1",
+  cohere:     "https://api.cohere.com/compatibility/v1",
   openrouter: "https://openrouter.ai/api/v1",
   together:   "https://api.together.xyz/v1",
 };
@@ -131,7 +142,7 @@ export async function loadProvidersFromDB(): Promise<void> {
   }
 }
 
-// ─── Persist a provider to DB (sem salvar a chave — vem sempre do env) ────────
+// ─── Persist a provider to DB ─────────────────────────────────────────────────
 
 async function persistProvider(p: ProviderConfig): Promise<void> {
   try {
@@ -139,7 +150,7 @@ async function persistProvider(p: ProviderConfig): Promise<void> {
       id: p.id,
       type: p.type,
       name: p.name,
-      apiKey: "__env__",
+      apiKey: p.apiKey,
       model: p.model,
       baseUrl: p.baseUrl,
       enabled: p.enabled,
@@ -155,6 +166,7 @@ async function persistProvider(p: ProviderConfig): Promise<void> {
       set: {
         type: p.type,
         name: p.name,
+        apiKey: p.apiKey,
         model: p.model,
         baseUrl: p.baseUrl,
         enabled: p.enabled,
@@ -185,11 +197,11 @@ export function listProviders(): {
     ? list.reduce((s, p) => s + p.successRate, 0) / list.length
     : 0;
   const masked = list.map(p => {
-    const envKey = getEffectiveApiKey(p.type);
+    const effectiveKey = getProviderApiKey(p);
     return {
       ...p,
-      apiKey: maskApiKey(envKey ?? ""),
-      hasEnvKey: !!envKey,
+      apiKey: maskApiKey(effectiveKey ?? ""),
+      hasEnvKey: !!effectiveKey,
     };
   });
   return { providers: masked, stats: { total: list.length, active, avgSuccessRate } };
@@ -207,7 +219,7 @@ export async function addProvider(input: {
     id,
     type: input.type,
     name: input.name,
-    apiKey: "__env__",
+    apiKey: input.apiKey || "__env__",
     model: input.model || DEFAULT_MODELS[input.type] || "gpt-4o-mini",
     baseUrl: input.baseUrl || DEFAULT_URLS[input.type] || "https://api.openai.com/v1",
     enabled: true,
@@ -267,12 +279,12 @@ export async function testProvider(id: string): Promise<{
   const provider = providers.get(id);
   if (!provider) return { success: false, latencyMs: 0, message: "Provider não encontrado" };
 
-  const apiKey = getEffectiveApiKey(provider.type);
+  const apiKey = getProviderApiKey(provider);
   if (!apiKey) {
     return {
       success: false,
       latencyMs: 0,
-      message: `Variável de ambiente ${PROVIDER_ENV_KEYS[provider.type] ?? "desconhecida"} não configurada no servidor`,
+      message: `Chave de API não encontrada. Configure a chave diretamente no provider ou via variável de ambiente ${PROVIDER_ENV_KEYS[provider.type] ?? "desconhecida"}.`,
     };
   }
 
@@ -348,22 +360,22 @@ export async function testProvider(id: string): Promise<{
 
 export async function callBestProvider(prompt: string, systemPrompt?: string): Promise<string> {
   const sorted = [...providers.values()]
-    .filter(p => p.enabled && !!getEffectiveApiKey(p.type))
+    .filter(p => p.enabled && !!getProviderApiKey(p))
     .sort((a, b) => a.priority - b.priority);
 
   if (sorted.length === 0) {
     const missing = [...providers.values()]
-      .filter(p => p.enabled && !getEffectiveApiKey(p.type))
-      .map(p => PROVIDER_ENV_KEYS[p.type] ?? p.type);
+      .filter(p => p.enabled && !getProviderApiKey(p))
+      .map(p => p.name);
     throw new Error(
       missing.length > 0
-        ? `Nenhum provider com chave configurada. Variáveis faltando: ${missing.join(", ")}`
+        ? `Nenhum provider com chave configurada. Providers sem chave: ${missing.join(", ")}`
         : "Nenhum provider habilitado"
     );
   }
 
   for (const provider of sorted) {
-    const apiKey = getEffectiveApiKey(provider.type)!;
+    const apiKey = getProviderApiKey(provider)!;
 
     try {
       let response: Response;
