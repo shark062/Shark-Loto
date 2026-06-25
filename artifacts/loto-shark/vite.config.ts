@@ -5,7 +5,9 @@ import path from "path";
 
 const basePath = process.env.BASE_PATH || "/";
 const rawPort = process.env.PORT;
-const port = rawPort ? Number(rawPort) : 3000;
+const port = rawPort ? Number(rawPort) : 5000;
+
+const isReplit = !!process.env.REPL_ID;
 
 export default defineConfig({
   base: basePath,
@@ -41,10 +43,14 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    hmr: isReplit
+      ? { protocol: "wss", clientPort: 443 }
+      : true,
     proxy: {
       "/api": {
         target: "http://localhost:8080",
         changeOrigin: true,
+        ws: false,
       },
     },
     fs: {
