@@ -1,12 +1,21 @@
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { build as esbuild } from "esbuild";
-import esbuildPluginPino from "esbuild-plugin-pino";
 import { rm } from "node:fs/promises";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Resolve packages from workspace root so they are found regardless of
+// pnpm linker strategy (isolated, hoisted, etc.)
+const workspaceRoot = path.resolve(__dirname, "..", "..");
+const workspaceRequire = createRequire(path.join(workspaceRoot, "package.json"));
+
+const { build: esbuild } = workspaceRequire("esbuild");
+const esbuildPluginPino = workspaceRequire("esbuild-plugin-pino");
+
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
-globalThis.require = createRequire(import.meta.url);
+globalThis.require = workspaceRequire;
 
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 
