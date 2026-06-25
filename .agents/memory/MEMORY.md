@@ -1,0 +1,1 @@
+- [Workflow setup](workflow-setup.md) — workflows precisam de PORT=8080 (API) e PORT=5000 (frontend); API usa script de rebuild automático.

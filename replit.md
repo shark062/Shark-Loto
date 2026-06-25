@@ -118,10 +118,18 @@ Motor de geração de jogos em `artifacts/api-server/src/core/sharkEngine.ts`:
 - Desdobramento interno automático
 - Sistema de pontuação com bônus de variação
 
+## Workflows Configurados
+
+- **API Server** — porta 8080, console. Comando: `PORT=8080 bash scripts/start-api.sh` (faz build + start automaticamente)
+- **Start application** — porta 5000, webview. Comando: `PORT=5000 pnpm --filter @workspace/loto-shark run dev`
+- O Vite proxy redireciona `/api` → `http://localhost:8080` automaticamente.
+
 ## Correções Realizadas
 
+- **Workflows configurados**: App agora inicia automaticamente com API na porta 8080 e frontend na 5000.
+- **Script de rebuild**: `scripts/start-api.sh` faz build do TypeScript antes de iniciar — garante que mudanças no código sejam aplicadas.
 - **Persistência de jogos**: O backend usa PostgreSQL. Os jogos gerados são salvos automaticamente no banco.
 - **Persistência de providers de IA**: Chaves de API salvas no Neon — não precisam ser reconfiguradas após restart.
-- **Conflito de portas**: Removido o workflow "Start application" redundante. Agora apenas os workflows individuais (`artifacts/api-server: API Server` na porta 8082 e `artifacts/loto-shark: web` na porta 23571) são usados.
-- **Polling excessivo**: O hook `useNextDrawInfo` foi ajustado de 1s para 60s de intervalo de refetch. O countdown é calculado no frontend.
+- **Polling excessivo**: O hook `useNextDrawInfo` foi ajustado para 30s de intervalo de refetch. O countdown é calculado no frontend.
 - **Bug duplicate key**: Corrigida entrada duplicada "lotofacil" em `routes/chat.ts`.
+- **PIX/Doação**: Página `/sobre` com chave PIX copia-e-cola integrada e QR Code via api.qrserver.com.
