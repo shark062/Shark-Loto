@@ -116,11 +116,14 @@ export default function AIProviders() {
   const [testing, setTesting]           = useState<string | null>(null);
   const [testResult, setTestResult]     = useState<Record<string, { ok: boolean; msg: string }>>({});
   const [loading, setLoading]           = useState(false);
+  const [editingKey, setEditingKey]     = useState<string | null>(null);
+  const [keyInput, setKeyInput]         = useState("");
 
   // Formulário
   const [form, setForm] = useState({
     type: "openai" as AIProviderType,
     name: "",
+    apiKey: "",
     model: "gpt-4o-mini",
     baseUrl: "",
   });
@@ -152,7 +155,7 @@ export default function AIProviders() {
   // ── Ações ──────────────────────────────────────────────────
 
   const handleAdd = async () => {
-    if (!form.name) return;
+    if (!form.name || !form.apiKey) return;
     setLoading(true);
     try {
       await apiFetch("/api/ai-providers", {
@@ -160,7 +163,7 @@ export default function AIProviders() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      setForm({ type: "openai", name: "", model: "gpt-4o-mini", baseUrl: "" });
+      setForm({ type: "openai", name: "", apiKey: "", model: "gpt-4o-mini", baseUrl: "" });
       setShowForm(false);
       await fetchData();
     } finally {
@@ -181,6 +184,23 @@ export default function AIProviders() {
     if (!confirm("Remover este provider?")) return;
     await apiFetch(`/api/ai-providers/${id}`, { method: "DELETE" });
     await fetchData();
+  };
+
+  const handleSaveKey = async (id: string) => {
+    if (!keyInput.trim()) return;
+    setLoading(true);
+    try {
+      await apiFetch(`/api/ai-providers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: keyInput.trim(), enabled: true }),
+      });
+      setEditingKey(null);
+      setKeyInput("");
+      await fetchData();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTest = async (id: string) => {
@@ -303,6 +323,21 @@ export default function AIProviders() {
               />
             </div>
 
+            {/* API Key */}
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Chave de API</label>
+              <input
+                type="password"
+                className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-mono"
+                placeholder="sk-... ou gsk_... ou sua chave"
+                value={form.apiKey}
+                onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                🔒 Salva no banco de forma segura — nunca exibida novamente.
+              </p>
+            </div>
+
             {/* Modelo */}
             <div>
               <label className="text-xs text-gray-400 mb-1 block">Modelo</label>
@@ -330,7 +365,7 @@ export default function AIProviders() {
               <Button
                 className="flex-1 bg-cyan-600 hover:bg-cyan-500"
                 onClick={handleAdd}
-                disabled={loading || !form.name}
+                disabled={loading || !form.name || !form.apiKey}
               >
                 {loading ? "Salvando..." : "Salvar Provider"}
               </Button>
@@ -382,12 +417,36 @@ export default function AIProviders() {
                       <span>📡 {p.totalCalls} chamadas</span>
                       {p.priority && <span>🏆 #{p.priority}</span>}
                     </div>
-                    {/* Chave mascarada — nunca exibida completa */}
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-xs font-mono text-gray-500 bg-black/30 px-2 py-0.5 rounded">
-                        🔒 {p.apiKey}
-                      </span>
-                    </div>
+                    {/* Chave mascarada / configuração inline */}
+                    {editingKey === p.id ? (
+                      <div className="mt-2 flex gap-1">
+                        <input
+                          type="password"
+                          autoFocus
+                          className="flex-1 bg-black/60 border border-cyan-500/50 rounded px-2 py-1 text-white text-xs font-mono"
+                          placeholder="Cole a chave aqui..."
+                          value={keyInput}
+                          onChange={(e) => setKeyInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleSaveKey(p.id); if (e.key === "Escape") { setEditingKey(null); setKeyInput(""); } }}
+                        />
+                        <Button size="sm" className="h-7 px-2 bg-cyan-600 hover:bg-cyan-500 text-xs" onClick={() => handleSaveKey(p.id)} disabled={loading || !keyInput.trim()}>
+                          {loading ? "..." : "OK"}
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { setEditingKey(null); setKeyInput(""); }}>✕</Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-xs font-mono px-2 py-0.5 rounded ${p.hasEnvKey ? "bg-green-900/30 text-green-400" : "bg-black/30 text-gray-500"}`}>
+                          {p.hasEnvKey ? `🔒 ${p.apiKey}` : "⚠️ sem chave"}
+                        </span>
+                        <button
+                          className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+                          onClick={() => { setEditingKey(p.id); setKeyInput(""); }}
+                        >
+                          {p.hasEnvKey ? "trocar" : "configurar"}
+                        </button>
+                      </div>
+                    )}
                     {result && (
                       <div className={`flex items-center gap-1 mt-1 text-xs ${result.ok ? "text-green-400" : "text-red-400"}`}>
                         {result.ok ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}

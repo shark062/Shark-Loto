@@ -142,7 +142,7 @@ export async function loadProvidersFromDB(): Promise<void> {
   }
 }
 
-// ─── Persist a provider to DB (chave NUNCA é salva — vem sempre do env) ───────
+// ─── Persist a provider to DB ─────────────────────────────────────────────────
 
 async function persistProvider(p: ProviderConfig): Promise<void> {
   try {
@@ -150,7 +150,7 @@ async function persistProvider(p: ProviderConfig): Promise<void> {
       id: p.id,
       type: p.type,
       name: p.name,
-      apiKey: "__env__",
+      apiKey: p.apiKey,
       model: p.model,
       baseUrl: p.baseUrl,
       enabled: p.enabled,
@@ -166,6 +166,7 @@ async function persistProvider(p: ProviderConfig): Promise<void> {
       set: {
         type: p.type,
         name: p.name,
+        apiKey: p.apiKey,
         model: p.model,
         baseUrl: p.baseUrl,
         enabled: p.enabled,
@@ -196,11 +197,11 @@ export function listProviders(): {
     ? list.reduce((s, p) => s + p.successRate, 0) / list.length
     : 0;
   const masked = list.map(p => {
-    const envKey = getEffectiveApiKey(p.type);
+    const effectiveKey = getProviderApiKey(p);
     return {
       ...p,
-      apiKey: maskApiKey(envKey ?? ""),
-      hasEnvKey: !!envKey,
+      apiKey: maskApiKey(effectiveKey ?? ""),
+      hasEnvKey: !!effectiveKey,
     };
   });
   return { providers: masked, stats: { total: list.length, active, avgSuccessRate } };
@@ -218,7 +219,7 @@ export async function addProvider(input: {
     id,
     type: input.type,
     name: input.name,
-    apiKey: "__env__",
+    apiKey: input.apiKey || "__env__",
     model: input.model || DEFAULT_MODELS[input.type] || "gpt-4o-mini",
     baseUrl: input.baseUrl || DEFAULT_URLS[input.type] || "https://api.openai.com/v1",
     enabled: true,
@@ -240,7 +241,7 @@ export async function addProvider(input: {
 export async function updateProvider(id: string, updates: Partial<ProviderConfig>): Promise<ProviderConfig | null> {
   const provider = providers.get(id);
   if (!provider) return null;
-  const immutable = ["id", "apiKey", "totalCalls", "successCalls", "successRate"];
+  const immutable = ["id", "totalCalls", "successCalls", "successRate"];
   for (const [key, value] of Object.entries(updates)) {
     if (!immutable.includes(key)) {
       (provider as any)[key] = value;
@@ -278,12 +279,12 @@ export async function testProvider(id: string): Promise<{
   const provider = providers.get(id);
   if (!provider) return { success: false, latencyMs: 0, message: "Provider não encontrado" };
 
-  const apiKey = getEffectiveApiKey(provider.type);
+  const apiKey = getProviderApiKey(provider);
   if (!apiKey) {
     return {
       success: false,
       latencyMs: 0,
-      message: `Variável de ambiente ${PROVIDER_ENV_KEYS[provider.type] ?? "desconhecida"} não configurada no servidor`,
+      message: `Chave de API não configurada para este provider`,
     };
   }
 
@@ -359,22 +360,22 @@ export async function testProvider(id: string): Promise<{
 
 export async function callBestProvider(prompt: string, systemPrompt?: string): Promise<string> {
   const sorted = [...providers.values()]
-    .filter(p => p.enabled && !!getEffectiveApiKey(p.type))
+    .filter(p => p.enabled && !!getProviderApiKey(p))
     .sort((a, b) => a.priority - b.priority);
 
   if (sorted.length === 0) {
     const missing = [...providers.values()]
-      .filter(p => p.enabled && !getEffectiveApiKey(p.type))
-      .map(p => PROVIDER_ENV_KEYS[p.type] ?? p.type);
+      .filter(p => p.enabled && !getProviderApiKey(p))
+      .map(p => p.name);
     throw new Error(
       missing.length > 0
-        ? `Nenhum provider com chave configurada. Variáveis faltando: ${missing.join(", ")}`
+        ? `Nenhum provider com chave configurada. Sem chave: ${missing.join(", ")}`
         : "Nenhum provider habilitado"
     );
   }
 
   for (const provider of sorted) {
-    const apiKey = getEffectiveApiKey(provider.type)!;
+    const apiKey = getProviderApiKey(provider)!;
 
     try {
       let response: Response;
