@@ -17,7 +17,8 @@ import {
   User,
   TrendingUp,
   Activity,
-  Target
+  Target,
+  Heart
 } from "lucide-react";
 
 export default function Navigation() {
@@ -94,6 +95,13 @@ export default function Navigation() {
       icon: Info,
       emoji: "📚",
       description: "Guia completo das modalidades"
+    },
+    {
+      href: "/sobre",
+      label: "Sobre & Doação",
+      icon: Heart,
+      emoji: "💚",
+      description: "Sobre o projeto e apoie via PIX"
     }
   ];
 

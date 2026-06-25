@@ -22,6 +22,8 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import AIProviders from "@/pages/AIProviders";
 import Premium from "@/pages/Premium";
+import Sobre from "@/pages/Sobre";
+import { useAutoCheckGames } from "@/hooks/useAutoCheckGames";
 
 function Router() {
   return (
@@ -43,6 +45,7 @@ function Router() {
       <Route path="/history" component={History} />
       <Route path="/manual-picker" component={ManualPicker} />
       <Route path="/ai-providers" component={AIProviders} />
+      <Route path="/sobre" component={Sobre} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -62,30 +65,38 @@ function useKeepAlive() {
   }, []);
 }
 
-function App() {
-  useKeepAlive();
+function AppContent() {
+  useAutoCheckGames();
 
   useEffect(() => {
     console.log('🦈 Shark Loterias initialized - Premium Edition');
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen text-foreground" style={{ position: 'relative' }}>
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundImage: "url('/bg-futurista.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-          backgroundRepeat: 'no-repeat',
-          zIndex: 0,
-        }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <Toaster />
-          <Router />
-        </div>
+    <div className="min-h-screen text-foreground" style={{ position: 'relative' }}>
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundImage: "url('/bg-futurista.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center center',
+        backgroundRepeat: 'no-repeat',
+        zIndex: 0,
+      }} />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <Toaster />
+        <Router />
       </div>
+    </div>
+  );
+}
+
+function App() {
+  useKeepAlive();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
     </QueryClientProvider>
   );
 }
