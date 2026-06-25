@@ -24,7 +24,24 @@ app.use(
     },
   }),
 );
-app.use(cors());
+const allowedOrigins = [
+  /^https?:\/\/localhost(:\d+)?$/,
+  /\.onrender\.com$/,
+  /\.replit\.dev$/,
+  /\.replit\.app$/,
+  /\.repl\.co$/,
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const allowed = allowedOrigins.some(pattern =>
+      typeof pattern === "string" ? pattern === origin : pattern.test(origin)
+    );
+    callback(null, allowed ? origin : false);
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
