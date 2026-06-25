@@ -217,17 +217,26 @@ router.get("/:id/next-draw", async (req, res) => {
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-    const contestNumber  = data?.numero || data?.contestNumber || 1;
-    const estimatedPrize = formatBRL(data?.valorEstimadoProximoConcurso);
-    const isLive         = getIsLiveVerified(data, lottery.drawTime);
+    const contestNumber  = data?.numeroConcursoProximo ?? ((data?.numero ?? 0) + 1);
+    const accumulated    = data?.acumulado ?? false;
+
+    // Prêmio: usa o valor estimado para o próximo concurso.
+    // Quando acumulado, prefere o maior entre o estimado e o acumulado.
+    const estimatedRaw  = Number(data?.valorEstimadoProximoConcurso ?? 0);
+    const acumuladoRaw  = Number(data?.valorAcumuladoProximoConcurso ?? 0);
+    const prizeRaw      = accumulated && acumuladoRaw > estimatedRaw ? acumuladoRaw : estimatedRaw;
+    const estimatedPrize = formatBRL(prizeRaw > 0 ? prizeRaw : estimatedRaw);
+
+    const isLive = getIsLiveVerified(data, lottery.drawTime);
 
     res.json({
-      contestNumber: contestNumber + 1,
+      contestNumber,
       drawDate: nextDrawDate.toISOString(),
       drawTime: lottery.drawTime,
       timeRemaining: { days, hours, minutes, seconds },
       estimatedPrize,
       isLive,
+      accumulated,
       nextDrawDateCaixa: caixaNextDate,
     });
   } catch {
