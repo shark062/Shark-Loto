@@ -22,7 +22,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const CHAVE_PIX = "lotosharkloterias@gmail.com";
+const PIX_PAYLOAD = "00020101021126580014br.gov.bcb.pix01365d237461-0a79-4ff3-9c8d-40afadf909b15204000053039865802BR5921ALEX BARBOSA DE SOUSA6007GOIANIA62070503***63049872";
+const NOME_BENEFICIARIO = "Alex Barbosa de Sousa";
 
 const FEATURES = [
   { icon: Brain, label: "IA com múltiplos provedores", color: "text-purple-400" },
@@ -46,23 +47,23 @@ export default function Sobre() {
 
   const handleCopyPix = async () => {
     try {
-      await navigator.clipboard.writeText(CHAVE_PIX);
+      await navigator.clipboard.writeText(PIX_PAYLOAD);
       setCopied(true);
       toast({
-        title: "Chave PIX copiada! 🎉",
-        description: "Obrigado pelo apoio! Cada doação mantém o projeto vivo.",
+        title: "PIX copiado! 🎉",
+        description: "Cole no seu app de banco e finalize o pagamento. Obrigado pelo apoio!",
       });
       setTimeout(() => setCopied(false), 3000);
     } catch {
       toast({
         title: "Copie manualmente",
-        description: CHAVE_PIX,
+        description: PIX_PAYLOAD.slice(0, 60) + "...",
         variant: "destructive",
       });
     }
   };
 
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`00020126580014br.gov.bcb.pix0136${CHAVE_PIX}5204000053039865802BR5925Loto Shark Loterias6009SAO PAULO62070503***6304`)}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(PIX_PAYLOAD)}`;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -183,11 +184,19 @@ export default function Sobre() {
 
             {/* Chave PIX */}
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground text-center">Ou use a chave PIX:</p>
-              <div className="flex items-center gap-2 p-3 bg-black/40 rounded-xl border border-green-500/20">
+              <p className="text-xs text-muted-foreground text-center">Ou copie o código PIX:</p>
+              <div className="p-3 bg-black/40 rounded-xl border border-green-500/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Beneficiário</p>
+                    <p className="text-sm font-medium text-green-300">{NOME_BENEFICIARIO}</p>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-400">PIX</Badge>
+                </div>
+                <div className="flex items-center gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-muted-foreground mb-0.5">E-mail PIX</p>
-                  <p className="text-sm font-mono text-green-400 truncate">{CHAVE_PIX}</p>
+                  <p className="text-[10px] text-muted-foreground mb-0.5">Copia e Cola</p>
+                  <p className="text-[11px] font-mono text-green-400 truncate">{PIX_PAYLOAD.slice(0, 40)}…</p>
                 </div>
                 <Button
                   onClick={handleCopyPix}
@@ -211,6 +220,7 @@ export default function Sobre() {
                     </>
                   )}
                 </Button>
+                </div>
               </div>
             </div>
 
