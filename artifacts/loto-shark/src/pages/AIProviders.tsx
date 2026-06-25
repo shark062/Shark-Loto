@@ -121,7 +121,6 @@ export default function AIProviders() {
   const [form, setForm] = useState({
     type: "openai" as AIProviderType,
     name: "",
-    apiKey: "",
     model: "gpt-4o-mini",
     baseUrl: "",
   });
@@ -153,7 +152,7 @@ export default function AIProviders() {
   // ── Ações ──────────────────────────────────────────────────
 
   const handleAdd = async () => {
-    if (!form.name || !form.apiKey) return;
+    if (!form.name) return;
     setLoading(true);
     try {
       await apiFetch("/api/ai-providers", {
@@ -161,7 +160,7 @@ export default function AIProviders() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      setForm({ type: "openai", name: "", apiKey: "", model: "gpt-4o-mini", baseUrl: "" });
+      setForm({ type: "openai", name: "", model: "gpt-4o-mini", baseUrl: "" });
       setShowForm(false);
       await fetchData();
     } finally {
@@ -257,11 +256,30 @@ export default function AIProviders() {
         </div>
       )}
 
+      {/* Aviso sobre configuração de chaves */}
+      <NeonCard className="mb-4 border border-yellow-500/30 bg-yellow-500/5">
+        <div className="flex items-start gap-3">
+          <span className="text-yellow-400 text-lg mt-0.5">🔐</span>
+          <div>
+            <p className="text-yellow-300 text-sm font-medium mb-1">Chaves de API — apenas administrador</p>
+            <p className="text-gray-400 text-xs leading-relaxed">
+              As chaves de API são configuradas pelo desenvolvedor direto no servidor (variáveis de ambiente).
+              Aqui você pode ativar/desativar provedores e selecionar o modelo a ser usado.
+            </p>
+            <div className="mt-2 font-mono text-xs text-gray-500 space-y-0.5">
+              <div>OPENAI_API_KEY · ANTHROPIC_API_KEY · GOOGLE_API_KEY</div>
+              <div>GROQ_API_KEY · MISTRAL_API_KEY · COHERE_API_KEY</div>
+              <div>DEEPSEEK_API_KEY · OPENROUTER_API_KEY</div>
+            </div>
+          </div>
+        </div>
+      </NeonCard>
+
       {/* Formulário de adição */}
       {showForm && (
         <NeonCard className="mb-6 border border-cyan-500/30">
           <h2 className="text-lg font-semibold text-cyan-400 mb-4 flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Nova IA
+            <Plus className="w-4 h-4" /> Novo Provedor
           </h2>
           <div className="space-y-3">
             {/* Tipo */}
@@ -279,25 +297,10 @@ export default function AIProviders() {
               <label className="text-xs text-gray-400 mb-1 block">Nome (para identificar)</label>
               <input
                 className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
-                placeholder="Ex: Minha OpenAI, GPT Principal..."
+                placeholder="Ex: OpenAI Principal, Groq Rápido..."
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
-            </div>
-
-            {/* API Key */}
-            <div>
-              <label className="text-xs text-gray-400 mb-1 block">Chave de API</label>
-              <input
-                type="password"
-                className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-mono"
-                placeholder="sk-... ou AI... ou gsk_..."
-                value={form.apiKey}
-                onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
-              />
-              <p className="text-xs text-yellow-500/70 mt-1 flex items-center gap-1">
-                🔒 Após salvar, a chave não pode ser visualizada ou editada — apenas excluída.
-              </p>
             </div>
 
             {/* Modelo */}
@@ -327,7 +330,7 @@ export default function AIProviders() {
               <Button
                 className="flex-1 bg-cyan-600 hover:bg-cyan-500"
                 onClick={handleAdd}
-                disabled={loading || !form.name || !form.apiKey}
+                disabled={loading || !form.name}
               >
                 {loading ? "Salvando..." : "Salvar Provider"}
               </Button>
