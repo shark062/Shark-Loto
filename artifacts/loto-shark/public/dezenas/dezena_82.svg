@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">
+  <defs>
+    <radialGradient id="glassBody82" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="35%" stop-color="#dfeaff" stop-opacity="0.22"/>
+      <stop offset="70%" stop-color="#b9c8e6" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#9aa9c9" stop-opacity="0.25"/>
+    </radialGradient>
+
+    <linearGradient id="iris82" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#3df0ff"/>
+      <stop offset="22%" stop-color="#7a5cff"/>
+      <stop offset="45%" stop-color="#ff4fd8"/>
+      <stop offset="68%" stop-color="#e6bd47"/>
+      <stop offset="85%" stop-color="#3df0ff"/>
+      <stop offset="100%" stop-color="#7a5cff"/>
+    </linearGradient>
+
+    <radialGradient id="irisGlow82" cx="50%" cy="50%" r="50%">
+      <stop offset="68%" stop-color="transparent"/>
+      <stop offset="80%" stop-color="#7a5cff" stop-opacity="0.25"/>
+      <stop offset="90%" stop-color="#ff4fd8" stop-opacity="0.35"/>
+      <stop offset="97%" stop-color="#3df0ff" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.3"/>
+    </radialGradient>
+
+    <radialGradient id="spec82" cx="32%" cy="24%" r="30%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="white" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="bot82" cx="55%" cy="88%" r="35%">
+      <stop offset="0%" stop-color="#3df0ff" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#3df0ff" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="halo82" cx="50%" cy="50%" r="50%">
+      <stop offset="68%" stop-color="#7a5cff" stop-opacity="0"/>
+      <stop offset="85%" stop-color="#ff4fd8" stop-opacity="0.22"/>
+      <stop offset="95%" stop-color="#3df0ff" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#3df0ff" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="textGrad82" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#bfe9ff"/>
+      <stop offset="100%" stop-color="#7a5cff"/>
+    </linearGradient>
+
+    <filter id="glow82" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <clipPath id="clip82">
+      <circle cx="40" cy="40" r="33"/>
+    </clipPath>
+  </defs>
+
+  <circle cx="40" cy="40" r="40" fill="url(#halo82)"/>
+  <ellipse cx="40" cy="70" rx="20" ry="4" fill="#000000" opacity="0.25"/>
+  <circle cx="40" cy="40" r="33" fill="url(#glassBody82)"/>
+
+  <g clip-path="url(#clip82)">
+    <circle cx="40" cy="40" r="33" fill="url(#bot82)"/>
+    <rect x="20" y="6" width="3" height="68" fill="#ffffff" opacity="0.08"/>
+    <rect x="55" y="10" width="2" height="60" fill="#ffffff" opacity="0.06"/>
+  </g>
+
+  <circle cx="40" cy="40" r="33" fill="none" stroke="url(#iris82)" stroke-width="3.2" stroke-opacity="0.85"/>
+  <circle cx="40" cy="40" r="33" fill="url(#irisGlow82)"/>
+
+  <text x="40" y="53"
+    font-family="'Arial Black', 'Arial Bold', Arial, sans-serif"
+    font-weight="900"
+    font-size="40"
+    text-anchor="middle"
+    fill="url(#textGrad82)"
+    filter="url(#glow82)"
+    letter-spacing="-2"
+  >82</text>
+
+  <text x="40" y="53"
+    font-family="'Arial Black', 'Arial Bold', Arial, sans-serif"
+    font-weight="900"
+    font-size="40"
+    text-anchor="middle"
+    fill="url(#textGrad82)"
+    fill-opacity="0.95"
+    letter-spacing="-2"
+  >82</text>
+
+  <ellipse cx="29" cy="24" rx="12" ry="8" fill="url(#spec82)"/>
+  <ellipse cx="54" cy="20" rx="4" ry="2.6" fill="white" fill-opacity="0.55"/>
+
+  <circle cx="40" cy="40" r="33" fill="none" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.35"/>
+</svg>

@@ -22,4 +22,18 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  const selfUrl = process.env["RENDER_EXTERNAL_URL"];
+  if (selfUrl) {
+    const PING_INTERVAL_MS = 10 * 60 * 1000;
+    setInterval(async () => {
+      try {
+        await fetch(`${selfUrl}/api/health`);
+        logger.info("Keep-alive ping OK");
+      } catch (e) {
+        logger.warn({ e }, "Keep-alive ping failed");
+      }
+    }, PING_INTERVAL_MS);
+    logger.info({ selfUrl }, "Keep-alive scheduled every 10 minutes");
+  }
 });
