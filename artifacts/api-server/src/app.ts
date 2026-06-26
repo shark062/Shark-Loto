@@ -70,13 +70,22 @@ const generalLimiter = rateLimit({
   message: { error: "Muitas requisições. Tente novamente em instantes." },
 });
 
-// IA / predição: 20 req/min (custoso)
+// IA / predição: 30 req/min (custoso)
 const aiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 20,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Limite de requisições de IA atingido. Aguarde 1 minuto." },
+});
+
+// MCP Gateway: 15 req/min (chamadas ao Claude com tools)
+const mcpLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Limite do MCP Gateway atingido. Aguarde 1 minuto." },
 });
 
 // Geração de jogos: 30 req/min
@@ -91,6 +100,7 @@ const gameLimiter = rateLimit({
 app.use("/api", generalLimiter);
 app.use("/api/ai",          aiLimiter);
 app.use("/api/chat",        aiLimiter);
+app.use("/api/mcp",         mcpLimiter);
 app.use("/api/prediction",  gameLimiter);
 app.use("/api/user/games",  gameLimiter);
 

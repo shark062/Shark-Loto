@@ -395,14 +395,14 @@ Seu trabalho: Análises honestas de dados históricos. Você não pode prever o 
 
     let response = await client.messages.create({
       model: "claude-3-5-haiku-20241022",
-      max_tokens: 2048,
+      max_tokens: 1200,
       system: systemPrompt,
       tools: mcpTools,
       messages,
     });
 
     let iterations = 0;
-    while (response.stop_reason === "tool_use" && iterations < 5) {
+    while (response.stop_reason === "tool_use" && iterations < 3) {
       iterations++;
       const toolBlocks = response.content.filter((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
 
@@ -418,7 +418,7 @@ Seu trabalho: Análises honestas de dados históricos. Você não pode prever o 
 
       response = await client.messages.create({
         model: "claude-3-5-haiku-20241022",
-        max_tokens: 2048,
+        max_tokens: 1200,
         system: systemPrompt,
         tools: mcpTools,
         messages,

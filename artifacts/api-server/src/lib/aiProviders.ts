@@ -3,6 +3,16 @@ import { logger } from "./logger";
 import { db } from "@workspace/db";
 import { aiProvidersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import {
+  classifyHttpError,
+  classifyNetworkError,
+  recordSuccess,
+  recordFailure,
+  isAvailable,
+  getHealth,
+  sleep,
+  withRetry,
+} from "./aiHealthManager";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,13 +41,12 @@ export interface EvolutionLogEntry {
   timestamp: string;
 }
 
-// ─── In-memory cache (source of truth = DB for config, env vars for keys) ────
+// ─── In-memory cache ──────────────────────────────────────────────────────────
 
 export const providers = new Map<string, ProviderConfig>();
 export const evolutionLog: EvolutionLogEntry[] = [];
 
-// ─── Mapeamento tipo → variáveis de ambiente (tenta múltiplos nomes) ──────────
-// Replit permite nomes com capitalização mista; mapeamos todas as variantes.
+// ─── Mapeamento tipo → variáveis de ambiente ──────────────────────────────────
 
 export const PROVIDER_ENV_KEYS: Record<string, string[]> = {
   openai:     ["OPENAI_API_KEY",     "OpenAI_API_KEY",    "openai_api_key"],
@@ -52,8 +61,10 @@ export const PROVIDER_ENV_KEYS: Record<string, string[]> = {
 };
 
 /**
- * Tenta cada variante de nome de env var para o tipo de provider.
- * Retorna o primeiro valor encontrado ou null.
+ * Prioridade de chave:
+ * 1. Variável ENV do ambiente (Render/Replit)
+ * 2. Banco de dados
+ * 3. null (não configurada)
  */
 export function getEffectiveApiKey(type: string): string | null {
   const variants = PROVIDER_ENV_KEYS[type];
@@ -66,18 +77,22 @@ export function getEffectiveApiKey(type: string): string | null {
 }
 
 /**
- * Retorna a chave real de um provider específico:
- * - Se o provider tem chave salva no banco (não "__env__"), usa ela.
- * - Caso contrário, tenta todas as variantes de env var.
+ * Retorna a chave real de um provider:
+ * - ENV sempre tem prioridade sobre o banco
+ * - Banco é fallback quando ENV não está disponível
  */
 export function getProviderApiKey(provider: ProviderConfig): string | null {
+  // 1ª prioridade: ENV
+  const envKey = getEffectiveApiKey(provider.type);
+  if (envKey) return envKey;
+  // 2ª prioridade: banco (se não for placeholder)
   if (provider.apiKey && provider.apiKey !== "__env__" && provider.apiKey.trim() !== "") {
     return provider.apiKey.trim();
   }
-  return getEffectiveApiKey(provider.type);
+  return null;
 }
 
-// ─── Default base URLs per provider type ─────────────────────────────────────
+// ─── Default URLs e modelos ───────────────────────────────────────────────────
 
 const DEFAULT_URLS: Record<string, string> = {
   openai:     "https://api.openai.com/v1",
@@ -132,7 +147,7 @@ function rowToConfig(row: any): ProviderConfig {
   };
 }
 
-// ─── Load all providers from DB into memory ───────────────────────────────────
+// ─── Load providers from DB ───────────────────────────────────────────────────
 
 export async function loadProvidersFromDB(): Promise<void> {
   try {
@@ -147,7 +162,7 @@ export async function loadProvidersFromDB(): Promise<void> {
   }
 }
 
-// ─── Persist a provider to DB ─────────────────────────────────────────────────
+// ─── Persist provider to DB ───────────────────────────────────────────────────
 
 async function persistProvider(p: ProviderConfig): Promise<void> {
   try {
@@ -193,7 +208,7 @@ async function persistProvider(p: ProviderConfig): Promise<void> {
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
 export function listProviders(): {
-  providers: (Omit<ProviderConfig, "apiKey"> & { apiKey: string; hasEnvKey: boolean })[];
+  providers: (Omit<ProviderConfig, "apiKey"> & { apiKey: string; hasEnvKey: boolean; healthStatus: string })[];
   stats: { total: number; active: number; avgSuccessRate: number };
 } {
   const list = [...providers.values()];
@@ -203,10 +218,12 @@ export function listProviders(): {
     : 0;
   const masked = list.map(p => {
     const effectiveKey = getProviderApiKey(p);
+    const health = getHealth(p.id, p.name);
     return {
       ...p,
       apiKey: maskApiKey(effectiveKey ?? ""),
       hasEnvKey: !!effectiveKey,
+      healthStatus: health.status,
     };
   });
   return { providers: masked, stats: { total: list.length, active, avgSuccessRate } };
@@ -274,7 +291,108 @@ export function getEvolutionLog(limit = 50): EvolutionLogEntry[] {
   return evolutionLog.slice(0, limit);
 }
 
-// ─── Test a provider — chave sempre lida do process.env ──────────────────────
+// ─── Executar chamada HTTP ao provider (com classificação de erro) ─────────────
+
+async function executeProviderCall(
+  provider: ProviderConfig,
+  apiKey: string,
+  prompt: string,
+  systemPrompt?: string,
+  maxTokens = 1500,
+): Promise<string> {
+  const start = Date.now();
+
+  if (provider.type === "anthropic") {
+    const response = await fetch(`${provider.baseUrl}/messages`, {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: provider.model,
+        max_tokens: maxTokens,
+        messages: [{ role: "user", content: prompt }],
+        system: systemPrompt,
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      const errInfo = classifyHttpError(response.status, body);
+      const err = new Error(`HTTP ${response.status}: ${errInfo.message}`);
+      (err as any).body = body;
+      throw err;
+    }
+
+    const data = await response.json() as any;
+    const latencyMs = Date.now() - start;
+    const text = data.content?.[0]?.text || "";
+
+    logger.info({
+      provider: provider.name,
+      model: provider.model,
+      latencyMs,
+      tokens: data.usage?.output_tokens ?? "?",
+      status: "success",
+    }, "Provider: chamada concluída");
+
+    return text;
+  }
+
+  // Chamada OpenAI-compatible
+  const extraHeaders: Record<string, string> = {};
+  if (provider.type === "openrouter") {
+    extraHeaders["HTTP-Referer"] = "https://lotoshark.app";
+    extraHeaders["X-Title"] = "LotoShark";
+  }
+
+  const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
+  const body: Record<string, any> = {
+    model: provider.model,
+    max_tokens: maxTokens,
+    temperature: 0.7,
+    messages: [{ role: "user", content: fullPrompt }],
+  };
+  if (provider.type === "deepseek") body.stream = false;
+
+  const response = await fetch(`${provider.baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      ...extraHeaders,
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (!response.ok) {
+    const respBody = await response.text().catch(() => "");
+    const errInfo = classifyHttpError(response.status, respBody);
+    const err = new Error(`HTTP ${response.status}: ${errInfo.message}`);
+    (err as any).body = respBody;
+    throw err;
+  }
+
+  const data = await response.json() as any;
+  const latencyMs = Date.now() - start;
+  const text = data.choices?.[0]?.message?.content || "";
+
+  logger.info({
+    provider: provider.name,
+    model: provider.model,
+    latencyMs,
+    tokens: data.usage?.completion_tokens ?? "?",
+    status: "success",
+  }, "Provider: chamada concluída");
+
+  return text;
+}
+
+// ─── Test a provider ──────────────────────────────────────────────────────────
 
 export async function testProvider(id: string): Promise<{
   success: boolean;
@@ -286,68 +404,13 @@ export async function testProvider(id: string): Promise<{
 
   const apiKey = getProviderApiKey(provider);
   if (!apiKey) {
-    return {
-      success: false,
-      latencyMs: 0,
-      message: `Chave de API não configurada para este provider`,
-    };
+    return { success: false, latencyMs: 0, message: "Chave de API não configurada para este provider" };
   }
 
   const start = Date.now();
   try {
-    let response: Response;
-    const prompt = "Responda apenas: OK";
-
-    if (provider.type === "anthropic") {
-      response = await fetch(`${provider.baseUrl}/messages`, {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: provider.model,
-          max_tokens: 10,
-          messages: [{ role: "user", content: prompt }],
-        }),
-        signal: AbortSignal.timeout(15000),
-      });
-    } else {
-      const extraHeaders: Record<string, string> = {};
-      if (provider.type === "openrouter") {
-        extraHeaders["HTTP-Referer"] = "https://lotoshark.app";
-        extraHeaders["X-Title"] = "LotoShark";
-      }
-      const body: Record<string, any> = {
-        model: provider.model,
-        max_tokens: 10,
-        messages: [{ role: "user", content: prompt }],
-      };
-      if (provider.type === "deepseek") body.stream = false;
-      response = await fetch(`${provider.baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          ...extraHeaders,
-        },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(15000),
-      });
-    }
-
+    await executeProviderCall(provider, apiKey, "Responda apenas: OK", undefined, 10);
     const latencyMs = Date.now() - start;
-    if (!response.ok) {
-      const text = await response.text().catch(() => "");
-      provider.lastError = `HTTP ${response.status}: ${text.slice(0, 120)}`;
-      // Teste manual NÃO desabilita o provider — apenas registra o erro.
-      // O auto-disable acontece apenas em chamadas reais (callBestProvider).
-      evolutionLog.unshift({ providerName: provider.name, action: "error", latencyMs, details: `test: HTTP ${response.status}`, timestamp: new Date().toISOString() });
-      persistProvider(provider).catch(() => {});
-      return { success: false, latencyMs, message: `HTTP ${response.status}: ${text.slice(0, 200)}` };
-    }
-
     provider.lastUsed = new Date().toISOString();
     provider.lastError = null;
     evolutionLog.unshift({ providerName: provider.name, action: "success", latencyMs, details: "test", timestamp: new Date().toISOString() });
@@ -355,17 +418,20 @@ export async function testProvider(id: string): Promise<{
     return { success: true, latencyMs, message: "Provider funcionando corretamente" };
   } catch (err: any) {
     const latencyMs = Date.now() - start;
-    provider.lastError = err.message;
+    provider.lastError = err.message?.slice(0, 120);
     evolutionLog.unshift({ providerName: provider.name, action: "error", latencyMs, details: `test: ${err.message?.slice(0, 60)}`, timestamp: new Date().toISOString() });
+    persistProvider(provider).catch(() => {});
     return { success: false, latencyMs, message: err.message };
   }
 }
 
-// ─── Call the best available provider — chave sempre lida do process.env ──────
+// ─── Call the best available provider ────────────────────────────────────────
+// Usa o Health Manager: nunca desliga por timeout/429 temporário/rede
+// Só marca OFFLINE em 401/402/403 confirmados
 
 export async function callBestProvider(prompt: string, systemPrompt?: string): Promise<string> {
   const sorted = [...providers.values()]
-    .filter(p => p.enabled && !!getProviderApiKey(p))
+    .filter(p => p.enabled && !!getProviderApiKey(p) && isAvailable(p.id, p.name))
     .sort((a, b) => a.priority - b.priority);
 
   if (sorted.length === 0) {
@@ -375,104 +441,49 @@ export async function callBestProvider(prompt: string, systemPrompt?: string): P
     throw new Error(
       missing.length > 0
         ? `Nenhum provider com chave configurada. Sem chave: ${missing.join(", ")}`
-        : "Nenhum provider habilitado"
+        : "Nenhum provider habilitado ou disponível"
     );
   }
 
   for (const provider of sorted) {
     const apiKey = getProviderApiKey(provider)!;
+    const start = Date.now();
 
     try {
-      let response: Response;
-      const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
+      const text = await withRetry(
+        () => executeProviderCall(provider, apiKey, prompt, systemPrompt),
+        provider.id,
+        provider.name,
+        "callBestProvider",
+      );
 
-      if (provider.type === "anthropic") {
-        response = await fetch(`${provider.baseUrl}/messages`, {
-          method: "POST",
-          headers: {
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            model: provider.model,
-            max_tokens: 1500,
-            messages: [{ role: "user", content: prompt }],
-            system: systemPrompt,
-          }),
-          signal: AbortSignal.timeout(25000),
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json() as any;
-        const text = data.content?.[0]?.text || "";
-        if (text) {
-          provider.totalCalls++;
-          provider.successCalls++;
-          provider.successRate = provider.successCalls / provider.totalCalls;
-          provider.lastUsed = new Date().toISOString();
-          persistProvider(provider).catch(() => {});
-          return text;
-        }
-      } else {
-        const extraHeaders: Record<string, string> = {};
-        if (provider.type === "openrouter") {
-          extraHeaders["HTTP-Referer"] = "https://lotoshark.app";
-          extraHeaders["X-Title"] = "LotoShark";
-        }
-        const body: Record<string, any> = {
-          model: provider.model,
-          max_tokens: 1500,
-          temperature: 0.7,
-          messages: [{ role: "user", content: fullPrompt }],
-        };
-        if (provider.type === "deepseek") body.stream = false;
-        response = await fetch(`${provider.baseUrl}/chat/completions`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            ...extraHeaders,
-          },
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(25000),
-        });
-        if (!response.ok) {
-          const errText = await response.text().catch(() => "");
-          const isQuotaErr = response.status === 402 || response.status === 401 ||
-            (response.status === 429 && (errText.includes("insufficient_quota") || errText.includes("billing")));
-          if (isQuotaErr) {
-            provider.enabled = false;
-            provider.lastError = `HTTP ${response.status}: credencial inválida ou saldo insuficiente`;
-            persistProvider(provider).catch(() => {});
-            logger.warn({ id: provider.id, status: response.status }, "callBestProvider: provider auto-desabilitado");
-            continue;
-          }
-          throw new Error(`HTTP ${response.status}: ${errText.slice(0, 80)}`);
-        }
-        const data = await response.json() as any;
-        const text = data.choices?.[0]?.message?.content || "";
-        if (text) {
-          provider.totalCalls++;
-          provider.successCalls++;
-          provider.successRate = provider.successCalls / provider.totalCalls;
-          provider.lastUsed = new Date().toISOString();
-          persistProvider(provider).catch(() => {});
-          return text;
-        }
+      if (text) {
+        const latencyMs = Date.now() - start;
+        provider.totalCalls++;
+        provider.successCalls++;
+        provider.successRate = provider.successCalls / provider.totalCalls;
+        provider.lastUsed = new Date().toISOString();
+        provider.avgLatencyMs = provider.avgLatencyMs === 0
+          ? latencyMs
+          : Math.round(provider.avgLatencyMs * 0.8 + latencyMs * 0.2);
+        recordSuccess(provider.id, provider.name, latencyMs);
+        persistProvider(provider).catch(() => {});
+        return text;
       }
     } catch (err: any) {
+      const latencyMs = Date.now() - start;
       provider.totalCalls++;
       provider.successRate = provider.successCalls / Math.max(provider.totalCalls, 1);
       provider.lastError = err.message?.slice(0, 120);
       persistProvider(provider).catch(() => {});
-      logger.warn({ provider: provider.name, err: err.message }, "callBestProvider: tentando próximo");
+      logger.warn({ provider: provider.name, latencyMs, err: err.message }, "callBestProvider: tentando próximo");
     }
   }
 
   throw new Error("Todos os providers falharam");
 }
 
-// ─── Recalculate priorities based on performance ──────────────────────────────
+// ─── Recalculate priorities ───────────────────────────────────────────────────
 
 export function recalcPriorities(): void {
   const sorted = [...providers.values()]
@@ -480,7 +491,7 @@ export function recalcPriorities(): void {
   sorted.forEach((p, i) => { p.priority = i; });
 }
 
-// ─── Initialize providers: registra configs no banco e sincroniza chaves ───────
+// ─── Initialize providers ─────────────────────────────────────────────────────
 
 export async function initDefaultProviders(): Promise<void> {
   await loadProvidersFromDB();
@@ -505,11 +516,9 @@ export async function initDefaultProviders(): Promise<void> {
     const existing = [...providers.values()].find((p) => p.type === ep.type);
 
     if (!existing) {
-      // Novo provider: cria já com a chave do env (se disponível)
       await addProvider({ type: ep.type, name: ep.name, apiKey: envKey ?? "__env__" });
       added++;
     } else if (envKey && (existing.apiKey === "__env__" || existing.apiKey === "" || !existing.apiKey)) {
-      // Provider existente com chave __env__: sincroniza a chave real do env para o banco
       existing.apiKey = envKey;
       await persistProvider(existing);
       synced++;
@@ -522,10 +531,7 @@ export async function initDefaultProviders(): Promise<void> {
   if (synced > 0) logger.info({ synced }, "Chaves de API sincronizadas do env para o banco");
 
   const activeWithKey = [...providers.values()].filter(p => p.enabled && !!getProviderApiKey(p));
-  logger.info(
-    { withKey, activeWithKey: activeWithKey.length },
-    "Providers prontos"
-  );
+  logger.info({ withKey, activeWithKey: activeWithKey.length }, "Providers prontos");
 
   if (withKey === 0) {
     logger.warn("Nenhuma variável de ambiente de API configurada. Configure as chaves no servidor.");
