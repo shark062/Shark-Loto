@@ -43,9 +43,10 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
-    hmr: isReplit
-      ? { protocol: "wss", clientPort: 443 }
-      : true,
+    hmr: isReplit ? false : true,
+    headers: isReplit
+      ? { "Cache-Control": "no-store, no-cache, must-revalidate" }
+      : {},
     proxy: {
       "/api": {
         target: "http://localhost:8080",
