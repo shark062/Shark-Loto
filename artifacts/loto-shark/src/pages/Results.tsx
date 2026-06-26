@@ -255,6 +255,18 @@ export default function Results() {
   const [filterDate, setFilterDate] = useState<string>('');
   const [clearingGames, setClearingGames] = useState(false);
   const [pdfMenuOpen, setPdfMenuOpen] = useState(false);
+  const pdfMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pdfMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (pdfMenuRef.current && !pdfMenuRef.current.contains(e.target as Node)) {
+        setPdfMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [pdfMenuOpen]);
 
   void showCelebration;
   void celebrationPrize;
@@ -557,7 +569,7 @@ export default function Results() {
 
           <div className="flex justify-center mt-3 gap-2 flex-wrap">
             {/* Menu de exportar PDF */}
-            <div className="relative">
+            <div className="relative" ref={pdfMenuRef}>
               <Button
                 onClick={() => setPdfMenuOpen(v => !v)}
                 className="bg-primary hover:bg-primary/80 text-black flex items-center gap-2 text-xs sm:text-sm"
@@ -567,7 +579,6 @@ export default function Results() {
               {pdfMenuOpen && (
                 <div
                   className="absolute left-0 mt-1 w-52 rounded-xl border border-white/10 bg-black/90 backdrop-blur-md shadow-xl z-50 overflow-hidden"
-                  onMouseLeave={() => setPdfMenuOpen(false)}
                 >
                   <button
                     className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-left hover:bg-white/10 transition-colors"
