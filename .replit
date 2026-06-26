@@ -20,17 +20,33 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "API Server"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "PORT=5000 pnpm --filter @workspace/loto-shark run dev"
 waitForPort = 5000
 
+[[workflows.workflow]]
+name = "API Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=8080 pnpm --filter @workspace/api-server run dev"
+waitForPort = 8080
+
 [workflows.workflow.metadata]
-outputType = "webview"
+outputType = "console"
 
 [agent]
 stack = "BEST_EFFORT_FALLBACK"
@@ -52,7 +68,5 @@ externalPort = 80
 [userenv.shared]
 
 [userenv.development]
-Chore_API_KEY = "cohere_OM2nc98b8FMu8fp2yyLhcwd0RjZ0M9C4l7XCBTlu15cyQs"
 
 [userenv.production]
-Chore_API_KEY = "cohere_OM2nc98b8FMu8fp2yyLhcwd0RjZ0M9C4l7XCBTlu15cyQs"
