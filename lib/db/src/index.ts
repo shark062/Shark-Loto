@@ -67,6 +67,12 @@ export async function runMigrations(): Promise<void> {
         "created_at" timestamp NOT NULL DEFAULT now(),
         "updated_at" timestamp NOT NULL DEFAULT now()
       );
+
+      CREATE TABLE IF NOT EXISTS "app_settings" (
+        "key" text PRIMARY KEY,
+        "value" text NOT NULL,
+        "updated_at" timestamp NOT NULL DEFAULT now()
+      );
     `);
   } finally {
     client.release();

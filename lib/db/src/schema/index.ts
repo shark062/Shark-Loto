@@ -45,3 +45,9 @@ export const aiProvidersTable = pgTable("ai_providers", {
 });
 
 export type AiProvider = typeof aiProvidersTable.$inferSelect;
+
+export const appSettingsTable = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});

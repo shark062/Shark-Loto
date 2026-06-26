@@ -23,6 +23,7 @@ import Register from "@/pages/Register";
 import AIProviders from "@/pages/AIProviders";
 import Premium from "@/pages/Premium";
 import Sobre from "@/pages/Sobre";
+import Admin from "@/pages/Admin";
 import { useAutoCheckGames } from "@/hooks/useAutoCheckGames";
 
 function Router() {
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/manual-picker" component={ManualPicker} />
       <Route path="/ai-providers" component={AIProviders} />
       <Route path="/sobre" component={Sobre} />
+      <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
   );

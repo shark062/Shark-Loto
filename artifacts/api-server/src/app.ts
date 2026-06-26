@@ -9,6 +9,7 @@ import aiAnalysisRouter from "./routes/aiAnalysis";
 import predictionRouter from "./routes/prediction";
 import chatRouter from "./routes/chat";
 import mcpGatewayRouter from "./routes/mcp-gateway";
+import adminRouter from "./routes/admin";
 import { logger } from "./lib/logger";
 import { runMigrations } from "@workspace/db";
 import { initDefaultProviders, listProviders } from "./lib/aiProviders";
@@ -102,6 +103,7 @@ app.use("/api/ai",           aiAnalysisRouter);
 app.use("/api/prediction",   predictionRouter);
 app.use("/api/chat",         chatRouter);
 app.use("/api/mcp",          mcpGatewayRouter);
+app.use("/api/admin",        adminRouter);
 
 // ── Meta-reasoning routes (alias for AIMetrics page) ─────────
 function buildCtx(lotteryId: string, lottery: any, draws: number[][]): LotteryContext {
