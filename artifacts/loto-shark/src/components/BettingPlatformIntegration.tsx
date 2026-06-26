@@ -138,7 +138,7 @@ export default function BettingPlatformIntegration({
 
         <div className="grid gap-3">
           {/* Lotogiro */}
-          <Card className="bg-black/30 border-primary/30 hover:border-primary/50 transition-all">
+          <Card className="glass-card hover:border-primary/50 transition-all">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -164,7 +164,7 @@ export default function BettingPlatformIntegration({
           </Card>
 
           {/* Loterias Caixa */}
-          <Card className="bg-black/30 border-accent/30 hover:border-accent/50 transition-all">
+          <Card className="glass-card hover:border-accent/50 transition-all">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -193,7 +193,7 @@ export default function BettingPlatformIntegration({
           </Card>
 
           {/* Lottoland */}
-          <Card className="bg-black/30 border-secondary/30 hover:border-secondary/50 transition-all">
+          <Card className="glass-card hover:border-secondary/50 transition-all">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">

@@ -54,9 +54,14 @@
 }
 
 
-/* ── Glass card — webkit prefix suplementar (backdrop-filter/bg/border via Tailwind em card.tsx) ── */
+/* ── Glass card — padrão único para todos os cards ──
+   Nota: CSS variable impede o Lightning CSS de dropar backdrop-filter no build */
 .glass-card {
-  -webkit-backdrop-filter: blur(20px);
+  --glass-backdrop: blur(20px);
+  background: rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 * {

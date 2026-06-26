@@ -199,7 +199,7 @@ export default function AdvancedDashboard() {
         <TabsContent value="overview" className="space-y-6 mt-8" data-testid="content-overview">
           <div className="grid grid-cols-1 gap-6">
             {/* Status do Sistema */}
-            <Card className="bg-slate-800/50 border-purple-500/20" data-testid="system-status-card">
+            <Card className="glass-card" data-testid="system-status-card">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-emerald-400" />
@@ -218,7 +218,7 @@ export default function AdvancedDashboard() {
             </Card>
 
             {/* Últimas Análises */}
-            <Card className="bg-slate-800/50 border-purple-500/20" data-testid="recent-analysis-card">
+            <Card className="glass-card" data-testid="recent-analysis-card">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Clock className="h-5 w-5 text-blue-400" />
@@ -264,7 +264,7 @@ export default function AdvancedDashboard() {
         {/* 🛡️ Aba: Qualidade */}
         <TabsContent value="quality" className="space-y-6 mt-8" data-testid="content-quality">
           <div className="grid grid-cols-1 gap-6">
-            <Card className="bg-slate-800/50 border-purple-500/20">
+            <Card className="glass-card">
               <CardHeader>
                 <CardTitle className="text-white">Métricas de Qualidade</CardTitle>
                 <CardDescription className="text-purple-200">
@@ -290,7 +290,7 @@ export default function AdvancedDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-800/50 border-purple-500/20">
+            <Card className="glass-card">
               <CardHeader>
                 <CardTitle className="text-white">Validações Ativas</CardTitle>
                 <CardDescription className="text-purple-200">
@@ -358,7 +358,7 @@ function MetricCard({ title, value, unit, icon: Icon, color, trend }: MetricCard
   };
 
   return (
-    <Card className="bg-slate-800/50 border-purple-500/20 hover:border-purple-400/40 transition-all duration-300">
+    <Card className="glass-card hover:border-purple-400/40 transition-all duration-300">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -524,7 +524,7 @@ function PerformanceCard({ title, value, trend, icon: Icon, color }: {
   };
 
   return (
-    <Card className="bg-slate-800/50 border-purple-500/20">
+    <Card className="glass-card">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className={`p-2 rounded-lg bg-gradient-to-r ${colorClasses[color]}`}>

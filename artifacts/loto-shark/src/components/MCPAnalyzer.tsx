@@ -72,7 +72,7 @@ export function MCPAnalyzer() {
       </div>
 
       {/* Seletor + Query */}
-      <Card className="bg-black/40 border-cyan-500/20">
+      <Card className="glass-card">
         <CardContent className="pt-4 space-y-3">
           <div className="flex gap-3">
             <div className="w-48">
@@ -126,7 +126,7 @@ export function MCPAnalyzer() {
 
       {/* Preview rápido dos dados reais */}
       {previewData && !result && !loading && (
-        <Card className="bg-black/30 border-cyan-500/10">
+        <Card className="glass-card">
           <CardHeader className="pb-2 pt-3">
             <CardTitle className="text-sm text-gray-400 flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -184,7 +184,7 @@ export function MCPAnalyzer() {
 
       {/* Análise em andamento */}
       {loading && (
-        <Card className="bg-black/40 border-cyan-500/20 animate-pulse">
+        <Card className="glass-card animate-pulse">
           <CardContent className="py-6 text-center">
             <Brain className="w-8 h-8 text-cyan-400 mx-auto mb-2 animate-bounce" />
             <p className="text-cyan-300 text-sm">Claude analisando dados reais da Caixa…</p>
@@ -208,7 +208,7 @@ export function MCPAnalyzer() {
 
       {/* Resultado da análise */}
       {result?.success && !loading && (
-        <Card className="bg-black/40 border-cyan-500/20">
+        <Card className="glass-card">
           <CardHeader className="pb-2 pt-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm text-cyan-300 flex items-center gap-2">
