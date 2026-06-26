@@ -28,6 +28,11 @@ type DrawCache = { draws: number[][]; latestContest: number; fetchedAt: number; 
 const cache: Record<string, DrawCache> = {};
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutos
 
+// Cache separado para fetchLatestDraw (dado bruto da Caixa) — TTL 2 minutos
+type LatestCache = { data: any; fetchedAt: number };
+const latestCache: Record<string, LatestCache> = {};
+const LATEST_TTL = 2 * 60 * 1000; // 2 minutos
+
 const CAIXA_HEADERS = {
   'Accept': 'application/json, text/plain, */*',
   'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -37,18 +42,29 @@ const CAIXA_HEADERS = {
 };
 
 export async function fetchLatestDraw(lotteryId: string): Promise<any | null> {
+  // Devolve do cache se ainda válido (evita hammer na API da Caixa)
+  const cached = latestCache[lotteryId];
+  if (cached && Date.now() - cached.fetchedAt < LATEST_TTL) {
+    return cached.data;
+  }
+
   const url = `${CAIXA_API}/${lotteryId}`;
   try {
     const resp = await fetch(url, {
       headers: CAIXA_HEADERS,
       signal: AbortSignal.timeout(10000),
     });
-    if (resp.ok) return await resp.json();
+    if (resp.ok) {
+      const data = await resp.json();
+      latestCache[lotteryId] = { data, fetchedAt: Date.now() };
+      return data;
+    }
     console.error(`[Caixa] ${lotteryId} → HTTP ${resp.status}`);
   } catch (err: any) {
     console.error(`[Caixa] ${lotteryId} → ERRO: ${err?.message ?? err}`);
   }
-  return null;
+  // Retorna cache expirado se disponível (fallback gracioso)
+  return cached?.data ?? null;
 }
 
 async function fetchDraw(lotteryId: string, contestNumber: number): Promise<number[] | null> {

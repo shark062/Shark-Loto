@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLotteryTypes } from "@/hooks/useLotteryData";
 import { jsPDF } from "jspdf";
-import { 
-  Trophy, 
+import {
+  Trophy,
   Medal,
   BarChart3,
   Download,
@@ -23,12 +23,10 @@ import {
   Mic,
   MicOff,
   Radio,
-  ClipboardPaste,
-  Copy,
-  CopyCheck,
+  FileText,
+  AlignJustify,
 } from "lucide-react";
 
-// @caixaloterias — canal dedicado a sorteios (2600+ transmissões), não o institucional
 const CANAL_CAIXA_URL = "https://www.youtube.com/@caixaloterias/live";
 const CANAL_CAIXA_CHANNEL_ID = "UC5LIlb-ytIe9cxoGGKg3f8Q";
 
@@ -45,8 +43,6 @@ const ONES_VAL: Record<string,number> = {'um':1,'uma':1,'dois':2,'duas':2,'três
 function extractNumbersFromSpeech(text: string): number[] {
   const found = new Set<number>();
   const lower = text.toLowerCase();
-
-  // Compound: "vinte e dois" = 22
   Object.keys(TENS_VAL).forEach(ten => {
     Object.keys(ONES_VAL).forEach(one => {
       if (lower.includes(`${ten} e ${one}`)) {
@@ -55,21 +51,16 @@ function extractNumbersFromSpeech(text: string): number[] {
       }
     });
   });
-
-  // Simple word numbers
   Object.entries(PT_WORD_MAP).forEach(([word, val]) => {
     const re = new RegExp(`(?:^|\\s)${word}(?:\\s|$|[,;.])`, 'i');
     if (re.test(lower) && val >= 1 && val <= 80) found.add(val);
   });
-
-  // Digit patterns (e.g. "05", "12", "3")
   const digitRe = /\b(0?[1-9]|[1-7]\d|80)\b/g;
   let m;
   while ((m = digitRe.exec(text)) !== null) {
     const n = parseInt(m[1], 10);
     if (n >= 1 && n <= 80) found.add(n);
   }
-
   return Array.from(found).sort((a, b) => a - b);
 }
 
@@ -96,59 +87,38 @@ function LiveSorteioCard({ userGames }: { userGames: any[] }) {
     setCheckResults(results);
   }, [selectedLotteryCheck]);
 
-  useEffect(() => {
-    runCheck(drawnNumbers, userGames);
-  }, [drawnNumbers, selectedLotteryCheck, userGames, runCheck]);
+  useEffect(() => { runCheck(drawnNumbers, userGames); }, [drawnNumbers, selectedLotteryCheck, userGames, runCheck]);
 
   const startListening = useCallback(() => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      setMicError('Reconhecimento de voz não suportado neste navegador. Use Chrome ou Samsung Internet.');
-      return;
-    }
+    if (!SR) { setMicError('Reconhecimento de voz não suportado neste navegador. Use Chrome ou Samsung Internet.'); return; }
     setMicError('');
     const recognition = new SR();
     recognition.lang = 'pt-BR';
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
-
     recognition.onresult = (event: any) => {
       let full = '';
-      for (let i = 0; i < event.results.length; i++) {
-        full += event.results[i][0].transcript + ' ';
-      }
+      for (let i = 0; i < event.results.length; i++) full += event.results[i][0].transcript + ' ';
       setTranscript(full.trim());
-      const nums = extractNumbersFromSpeech(full);
-      setDrawnNumbers(nums);
+      setDrawnNumbers(extractNumbersFromSpeech(full));
     };
-    recognition.onerror = (e: any) => {
-      if (e.error !== 'aborted') setMicError(`Erro: ${e.error}`);
-      setIsListening(false);
-    };
+    recognition.onerror = (e: any) => { if (e.error !== 'aborted') setMicError(`Erro: ${e.error}`); setIsListening(false); };
     recognition.onend = () => setIsListening(false);
-
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
   }, []);
 
   const toggleListening = () => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    } else {
-      startListening();
-    }
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); }
+    else startListening();
   };
 
-  // Auto-ativa o microfone ao abrir a página
   useEffect(() => {
     const timer = setTimeout(() => startListening(), 800);
-    return () => {
-      clearTimeout(timer);
-      recognitionRef.current?.stop();
-    };
+    return () => { clearTimeout(timer); recognitionRef.current?.stop(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -161,8 +131,9 @@ function LiveSorteioCard({ userGames }: { userGames: any[] }) {
     setMicError('');
   };
 
-  const getLotteryName = (lotteryId: string) =>
-    (lotteryTypes as any[])?.find(l => l.id === lotteryId)?.displayName || lotteryId;
+  void transcript;
+
+  const getLotteryName = (id: string) => (lotteryTypes as any[])?.find(l => l.id === id)?.displayName || id;
 
   return (
     <Card className="bg-white/[0.04] border border-red-500/40 mb-6">
@@ -177,8 +148,6 @@ function LiveSorteioCard({ userGames }: { userGames: any[] }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-
-        {/* Vídeo embed automático — Canal Caixa ao vivo */}
         <div className="w-full rounded-xl overflow-hidden border border-red-500/20 bg-black" style={{ aspectRatio: '16/9' }}>
           <iframe
             className="w-full h-full"
@@ -189,70 +158,41 @@ function LiveSorteioCard({ userGames }: { userGames: any[] }) {
             title="Sorteio ao Vivo — Canal Caixa"
           />
         </div>
-
-        {/* Botão para abrir no YouTube caso o embed não carregue */}
         <div className="flex justify-end">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => window.open(CANAL_CAIXA_URL, '_blank')}
-            className="text-red-400 hover:text-red-300 gap-1.5 text-xs"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            Abrir canal no YouTube
+          <Button size="sm" variant="ghost" onClick={() => window.open(CANAL_CAIXA_URL, '_blank')} className="text-red-400 hover:text-red-300 gap-1.5 text-xs">
+            <ExternalLink className="h-3.5 w-3.5" /> Abrir canal no YouTube
           </Button>
         </div>
-
-        {/* Conferência automática por áudio */}
         <div className="border-t border-white/10 pt-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Radio className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold text-primary">Conferência Automática por Áudio</p>
             </div>
-            {(drawnNumbers.length > 0 || transcript) && (
-              <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground text-xs h-7 px-2">
-                Limpar
-              </Button>
+            {(drawnNumbers.length > 0) && (
+              <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground text-xs h-7 px-2">Limpar</Button>
             )}
           </div>
-
           <p className="text-xs text-muted-foreground">
-            Ative o microfone e aponte para o áudio do sorteio. As dezenas pronunciadas são capturadas e conferidas automaticamente contra seus jogos salvos, em qualquer modalidade.
+            Ative o microfone e aponte para o áudio do sorteio. As dezenas pronunciadas são capturadas e conferidas automaticamente.
           </p>
-
-          {/* Filtro de modalidade + botão mic */}
           <div className="flex gap-2 items-center">
             <Select value={selectedLotteryCheck} onValueChange={setSelectedLotteryCheck}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Todas as modalidades" />
-              </SelectTrigger>
+              <SelectTrigger className="flex-1"><SelectValue placeholder="Todas as modalidades" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as modalidades</SelectItem>
-                {(lotteryTypes as any[])?.map((l: any) => (
-                  <SelectItem key={l.id} value={l.id}>{l.displayName}</SelectItem>
-                ))}
+                {(lotteryTypes as any[])?.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.displayName}</SelectItem>)}
               </SelectContent>
             </Select>
-
             <Button
               onClick={toggleListening}
-              className={`shrink-0 gap-2 font-semibold transition-all ${
-                isListening
-                  ? 'bg-red-600 hover:bg-red-700 text-white border-red-500 animate-pulse'
-                  : 'bg-primary/20 hover:bg-primary/30 border border-primary/50 text-primary'
-              }`}
+              className={`shrink-0 gap-2 font-semibold transition-all ${isListening ? 'bg-red-600 hover:bg-red-700 text-white border-red-500 animate-pulse' : 'bg-primary/20 hover:bg-primary/30 border border-primary/50 text-primary'}`}
             >
               {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               {isListening ? 'Parar' : 'Ativar Mic'}
             </Button>
           </div>
-
-          {micError && (
-            <p className="text-xs text-red-400 bg-red-500/10 rounded-lg p-2">{micError}</p>
-          )}
-
-          {/* Dezenas detectadas */}
+          {micError && <p className="text-xs text-red-400 bg-red-500/10 rounded-lg p-2">{micError}</p>}
           {drawnNumbers.length > 0 && (
             <div className="rounded-lg bg-white/5 border border-white/10 p-3 space-y-2">
               <p className="text-xs text-muted-foreground font-medium">
@@ -266,16 +206,11 @@ function LiveSorteioCard({ userGames }: { userGames: any[] }) {
               </div>
             </div>
           )}
-
-          {/* Status escutando sem números ainda */}
           {isListening && drawnNumbers.length === 0 && (
             <div className="flex items-center gap-2 text-xs text-green-400 animate-pulse">
-              <Mic className="h-3.5 w-3.5" />
-              Ouvindo... aguardando dezenas pronunciadas
+              <Mic className="h-3.5 w-3.5" /> Ouvindo... aguardando dezenas pronunciadas
             </div>
           )}
-
-          {/* Resultados automáticos */}
           {checkResults.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">
@@ -283,183 +218,29 @@ function LiveSorteioCard({ userGames }: { userGames: any[] }) {
               </p>
               <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
                 {checkResults.map((res, i) => (
-                  <div key={i} className={`rounded-lg p-2.5 border text-xs flex items-start gap-2 ${
-                    res.matches.length >= 4 ? 'bg-green-500/10 border-green-500/30'
-                    : res.matches.length >= 2 ? 'bg-yellow-500/10 border-yellow-500/30'
-                    : 'bg-white/5 border-white/10 opacity-50'
-                  }`}>
+                  <div key={i} className={`rounded-lg p-2.5 border text-xs flex items-start gap-2 ${res.matches.length >= 4 ? 'bg-green-500/10 border-green-500/30' : res.matches.length >= 2 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-white/5 border-white/10 opacity-50'}`}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                         <Badge variant="secondary" className="text-xs py-0 px-1.5">{getLotteryName(res.game.lotteryId)}</Badge>
-                        <span className={`font-bold text-xs ${
-                          res.matches.length >= 4 ? 'text-green-400'
-                          : res.matches.length >= 2 ? 'text-yellow-400'
-                          : 'text-muted-foreground'
-                        }`}>
+                        <span className={`font-bold text-xs ${res.matches.length >= 4 ? 'text-green-400' : res.matches.length >= 2 ? 'text-yellow-400' : 'text-muted-foreground'}`}>
                           {res.matches.length} acerto{res.matches.length !== 1 ? 's' : ''}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {(res.game.selectedNumbers as number[]).map((n: number) => (
-                          <img
-                            key={n}
-                            src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`}
-                            alt={n.toString().padStart(2, '0')}
-                            draggable={false}
-                            className={`w-7 h-7 transition-all ${
-                              res.matches.includes(n)
-                                ? '[filter:drop-shadow(0_0_7px_rgba(0,255,100,0.95))]'
-                                : 'opacity-30'
-                            }`}
+                          <img key={n} src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`} alt={n.toString().padStart(2, '0')} draggable={false}
+                            className={`w-7 h-7 transition-all ${res.matches.includes(n) ? '[filter:drop-shadow(0_0_7px_rgba(0,255,100,0.95))]' : 'opacity-30'}`}
                           />
                         ))}
                       </div>
                     </div>
-                    {res.matches.length >= 2
-                      ? <CheckCircle className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
-                      : <XCircle className="h-4 w-4 text-white/20 shrink-0 mt-0.5" />}
+                    {res.matches.length >= 2 ? <CheckCircle className="h-4 w-4 text-green-400 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 text-white/20 shrink-0 mt-0.5" />}
                   </div>
                 ))}
               </div>
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function parseDezenaSequences(raw: string): number[][] {
-  return raw
-    .split('\n')
-    .map(line => line.trim().replace(/\s+/g, ''))
-    .filter(line => line.length >= 4 && /^\d+$/.test(line))
-    .map(line => {
-      const nums: number[] = [];
-      for (let i = 0; i < line.length - 1; i += 2) {
-        const n = parseInt(line.slice(i, i + 2), 10);
-        if (n >= 1 && n <= 99) nums.push(n);
-      }
-      return [...new Set(nums)].sort((a, b) => a - b);
-    })
-    .filter(nums => nums.length >= 2);
-}
-
-function ImportadorDezenas() {
-  const [rawText, setRawText] = useState('');
-  const [jogos, setJogos] = useState<number[][]>([]);
-  const [copiadoIdx, setCopiadoIdx] = useState<number | null>(null);
-  const [copiadoTodos, setCopiadoTodos] = useState(false);
-
-  const importar = () => {
-    const parsed = parseDezenaSequences(rawText);
-    setJogos(parsed);
-  };
-
-  const copiarJogo = (nums: number[], idx: number) => {
-    const texto = nums.map(n => n.toString().padStart(2, '0')).join(' ');
-    navigator.clipboard.writeText(texto).then(() => {
-      setCopiadoIdx(idx);
-      setTimeout(() => setCopiadoIdx(null), 1800);
-    });
-  };
-
-  const copiarTodos = () => {
-    const texto = jogos
-      .map(nums => nums.map(n => n.toString().padStart(2, '0')).join(' '))
-      .join('\n');
-    navigator.clipboard.writeText(texto).then(() => {
-      setCopiadoTodos(true);
-      setTimeout(() => setCopiadoTodos(false), 1800);
-    });
-  };
-
-  return (
-    <Card className="bg-white/[0.04] border border-primary/30 mb-6">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-primary flex items-center gap-2 text-base">
-          <ClipboardPaste className="h-5 w-5" />
-          Importar Dezenas Geradas
-        </CardTitle>
-        <p className="text-xs text-muted-foreground mt-1">
-          Cole sequências de dezenas coladas (ex: <span className="font-mono text-primary/80">0203040506...</span>), uma por linha. As dezenas serão separadas e formatadas para copiar nas loterias alternativas.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <textarea
-          className="w-full rounded-lg bg-black/30 border border-white/10 text-xs font-mono text-foreground p-3 min-h-[120px] resize-y focus:outline-none focus:border-primary/50 placeholder:text-muted-foreground/50"
-          placeholder={"Cole as sequências aqui, uma por linha:\n0203040506080910111216181920212225\n0102040508091011131617181921232425\n..."}
-          value={rawText}
-          onChange={e => setRawText(e.target.value)}
-        />
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            onClick={importar}
-            disabled={!rawText.trim()}
-            className="bg-primary hover:bg-primary/80 text-black text-xs font-semibold gap-1.5"
-          >
-            <ClipboardPaste className="h-3.5 w-3.5" />
-            Importar e Formatar
-          </Button>
-          {jogos.length > 0 && (
-            <Button
-              onClick={copiarTodos}
-              variant="outline"
-              className="border-primary/40 text-primary hover:bg-primary/10 text-xs gap-1.5"
-            >
-              {copiadoTodos ? <CopyCheck className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
-              {copiadoTodos ? 'Copiado!' : `Copiar Todos (${jogos.length})`}
-            </Button>
-          )}
-          {jogos.length > 0 && (
-            <Button
-              onClick={() => { setJogos([]); setRawText(''); }}
-              variant="ghost"
-              className="text-muted-foreground text-xs"
-            >
-              Limpar
-            </Button>
-          )}
-        </div>
-
-        {jogos.length > 0 && (
-          <div className="space-y-2 mt-1">
-            <p className="text-xs text-muted-foreground">{jogos.length} jogo{jogos.length !== 1 ? 's' : ''} importado{jogos.length !== 1 ? 's' : ''}</p>
-            {jogos.map((nums, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-2 rounded-lg bg-black/30 border border-white/10 px-3 py-2"
-              >
-                <span className="text-xs text-muted-foreground w-5 shrink-0 font-mono">{idx + 1}.</span>
-                <div className="flex flex-wrap gap-1 flex-1">
-                  {nums.map(n => (
-                    <img
-                      key={n}
-                      src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`}
-                      alt={n.toString().padStart(2, '0')}
-                      draggable={false}
-                      className="w-7 h-7 [filter:drop-shadow(0_0_4px_rgba(0,220,255,0.7))]"
-                    />
-                  ))}
-                </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    {nums.map(n => n.toString().padStart(2, '0')).join(' ')}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => copiarJogo(nums, idx)}
-                    className="h-6 px-2 text-[10px] gap-1 text-primary hover:text-primary/80"
-                  >
-                    {copiadoIdx === idx ? <CopyCheck className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
-                    {copiadoIdx === idx ? 'Copiado' : 'Copiar'}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
@@ -473,6 +254,12 @@ export default function Results() {
   const [celebrationPrize, setCelebrationPrize] = useState<string>();
   const [filterDate, setFilterDate] = useState<string>('');
   const [clearingGames, setClearingGames] = useState(false);
+  const [pdfMenuOpen, setPdfMenuOpen] = useState(false);
+
+  void showCelebration;
+  void celebrationPrize;
+  void setCelebrationPrize;
+  void setShowCelebration;
 
   const handleClearAllGames = async () => {
     if (!window.confirm('Tem certeza que deseja remover todos os jogos salvos? Esta ação não pode ser desfeita.')) return;
@@ -490,7 +277,6 @@ export default function Results() {
 
   const { data: lotteryTypes } = useLotteryTypes();
 
-  // Verifica se há sorteio ao vivo agora (usa data real da Caixa, não horário fixo)
   const { data: liveStatus } = useQuery({
     queryKey: ["/api/lotteries/live-status"],
     queryFn: async () => {
@@ -498,7 +284,7 @@ export default function Results() {
       if (!r.ok) return { isLive: false, activeLotteries: [] };
       return r.json();
     },
-    refetchInterval: 60_000, // re-checa a cada 1 minuto
+    refetchInterval: 60_000,
     staleTime: 30_000,
   });
 
@@ -509,9 +295,9 @@ export default function Results() {
       if (!response.ok) throw new Error('Failed to fetch user stats');
       return response.json();
     },
-    refetchInterval: 15000,
-    refetchOnWindowFocus: true,
-    staleTime: 0,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: false,
+    staleTime: 20_000,
   });
 
   const { data: userGames, isLoading: gamesLoading } = useQuery({
@@ -521,9 +307,9 @@ export default function Results() {
       if (!response.ok) throw new Error('Falha ao buscar jogos');
       return response.json();
     },
-    refetchInterval: 10000,
-    refetchOnWindowFocus: true,
-    staleTime: 0,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: false,
+    staleTime: 20_000,
   });
 
   const gamesList: any[] = (userGames as any[]) || [];
@@ -539,8 +325,7 @@ export default function Results() {
     return true;
   });
 
-  const getLotteryName = (lotteryId: string) =>
-    (lotteryTypes as any[])?.find(l => l.id === lotteryId)?.displayName || lotteryId;
+  const getLotteryName = (id: string) => (lotteryTypes as any[])?.find(l => l.id === id)?.displayName || id;
 
   const getMatchesColor = (matches: number, prizeWon: string) => {
     const prize = parseFloat(prizeWon || "0");
@@ -552,43 +337,213 @@ export default function Results() {
 
   const totalPrizeWon = filteredGames.reduce((sum, game) => sum + parseFloat(game.prizeWon || "0"), 0);
 
-  const exportToPDF = () => {
+  // ─── PDF 1: DETALHADO ─────────────────────────────────────────────────────────
+  const exportPDFDetalhado = () => {
     try {
       const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+      const MARGIN = 18;
+      const LINE = 7;
 
-      doc.setFontSize(22);
-      doc.setTextColor(0, 150, 255);
-      doc.text("Shark Loterias - Relatorio de Resultados", pageWidth / 2, 20, { align: "center" });
+      // Cabeçalho
+      doc.setFillColor(10, 10, 30);
+      doc.rect(0, 0, W, 38, 'F');
+      doc.setFontSize(18);
+      doc.setTextColor(0, 200, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SHARK LOTERIAS', W / 2, 15, { align: 'center' });
       doc.setFontSize(10);
-      doc.setTextColor(150, 150, 150);
-      doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, pageWidth / 2, 28, { align: "center" });
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text("Resumo Geral", 20, 45);
-      doc.setFontSize(11);
-      doc.text(`Total de Jogos: ${userStats?.totalGames || 0}`, 20, 55);
-      doc.text(`Jogos Premiados: ${userStats?.wins || 0}`, 20, 62);
-      doc.text(`Total Acumulado: R$ ${totalPrizeWon.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 20, 69);
+      doc.setTextColor(180, 180, 200);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Relatório Detalhado de Jogos Gerados', W / 2, 23, { align: 'center' });
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, W / 2, 31, { align: 'center' });
 
-      let yPos = 85;
-      filteredGames.forEach((game: any, index: number) => {
-        if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-        doc.setFontSize(11);
-        doc.setTextColor(0, 0, 0);
-        doc.text(`${index + 1}. ${getLotteryName(game.lotteryId)} - Concurso #${game.contestNumber}`, 20, yPos);
+      // Resumo
+      let y = 50;
+      doc.setFontSize(12);
+      doc.setTextColor(0, 180, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('RESUMO GERAL', MARGIN, y);
+      y += LINE;
+      doc.setDrawColor(0, 180, 255);
+      doc.setLineWidth(0.4);
+      doc.line(MARGIN, y, W - MARGIN, y);
+      y += LINE;
+
+      doc.setFontSize(10);
+      doc.setTextColor(50, 50, 50);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Total de Jogos: ${filteredGames.length}`, MARGIN, y); y += LINE - 1;
+      doc.text(`Jogos Premiados: ${userStats?.wins ?? 0}`, MARGIN, y); y += LINE - 1;
+      doc.text(`Total Ganho: R$ ${totalPrizeWon.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, MARGIN, y);
+      if (filterLottery !== 'all') {
+        y += LINE - 1;
+        doc.text(`Filtro aplicado: ${getLotteryName(filterLottery)}`, MARGIN, y);
+      }
+      y += 10;
+
+      // Jogos
+      doc.setFontSize(12);
+      doc.setTextColor(0, 180, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('JOGOS', MARGIN, y);
+      y += LINE;
+      doc.line(MARGIN, y, W - MARGIN, y);
+      y += LINE;
+
+      filteredGames.forEach((game: any, idx: number) => {
+        const blockH = 38;
+        if (y + blockH > H - 20) { doc.addPage(); y = 20; }
+
+        // Fundo alternado leve
+        if (idx % 2 === 0) {
+          doc.setFillColor(245, 248, 255);
+          doc.rect(MARGIN - 2, y - 5, W - MARGIN * 2 + 4, blockH, 'F');
+        }
+
+        // Linha 1: número do jogo + modalidade + concurso
+        doc.setFontSize(10);
+        doc.setTextColor(0, 120, 200);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${idx + 1}. ${getLotteryName(game.lotteryId)}`, MARGIN, y);
+        doc.setTextColor(100, 100, 120);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Concurso #${game.contestNumber ?? '—'}`, W / 2, y);
+
+        // Linha 2: Dezenas
+        y += LINE;
+        doc.setTextColor(20, 20, 20);
+        doc.setFont('helvetica', 'bold');
+        const dezenas = (game.selectedNumbers as number[])
+          .map((n: number) => n.toString().padStart(2, '0'))
+          .join('  ');
+        const dezLines = doc.splitTextToSize(`Dezenas: ${dezenas}`, W - MARGIN * 2);
         doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Números: ${game.selectedNumbers.join(", ")}`, 20, yPos + 7);
-        doc.text(`Acertos: ${game.matches} | Prêmio: R$ ${parseFloat(game.prizeWon || "0").toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 20, yPos + 14);
-        doc.text(`Data: ${new Date(game.createdAt).toLocaleDateString('pt-BR')} | Estratégia: ${game.strategy}`, 20, yPos + 21);
-        yPos += 35;
+        dezLines.forEach((line: string) => {
+          if (y > H - 20) { doc.addPage(); y = 20; }
+          doc.text(line, MARGIN, y);
+          y += 5.5;
+        });
+
+        // Linha 3: Estratégia | Data
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(80, 80, 100);
+        doc.setFontSize(8.5);
+        const estrategia = game.strategy ?? '—';
+        const dataCriacao = new Date(game.createdAt).toLocaleString('pt-BR');
+        doc.text(`Estratégia: ${estrategia}    |    Data: ${dataCriacao}`, MARGIN, y);
+        y += 5.5;
+
+        // Linha 4: Acertos | Prêmio
+        const acertos = game.matches ?? '—';
+        const premio = parseFloat(game.prizeWon || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        doc.text(`Acertos: ${acertos}    |    Prêmio: R$ ${premio}`, MARGIN, y);
+        y += 9;
       });
 
-      doc.save("Shark_Loterias_Relatorio.pdf");
-    } catch (error) {
-      alert("Erro ao gerar PDF.");
+      // Rodapé
+      const pages = (doc.internal as any).getNumberOfPages?.() ?? 1;
+      for (let p = 1; p <= pages; p++) {
+        doc.setPage(p);
+        doc.setFontSize(7);
+        doc.setTextColor(160, 160, 180);
+        doc.text(`Shark Loterias — Uso pessoal | Página ${p} de ${pages}`, W / 2, H - 8, { align: 'center' });
+      }
+
+      doc.save(`Shark_Detalhado_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+    } catch {
+      alert('Erro ao gerar PDF detalhado.');
+    }
+  };
+
+  // ─── PDF 2: COMPACTO ──────────────────────────────────────────────────────────
+  // Formato: modalidade, total de jogos gerados, um jogo por linha como sequência:
+  //   0203040506080910111216181920212225
+  const exportPDFCompacto = () => {
+    try {
+      const doc = new jsPDF();
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+      const MARGIN = 18;
+      const LINE = 7;
+
+      // Cabeçalho
+      doc.setFillColor(10, 10, 30);
+      doc.rect(0, 0, W, 32, 'F');
+      doc.setFontSize(16);
+      doc.setTextColor(0, 200, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SHARK LOTERIAS', W / 2, 13, { align: 'center' });
+      doc.setFontSize(9);
+      doc.setTextColor(180, 180, 200);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, W / 2, 21, { align: 'center' });
+      doc.text(`Total de jogos: ${filteredGames.length}`, W / 2, 28, { align: 'center' });
+
+      let y = 44;
+
+      // Agrupa por modalidade
+      const byLottery: Record<string, any[]> = {};
+      filteredGames.forEach(game => {
+        const key = game.lotteryId;
+        if (!byLottery[key]) byLottery[key] = [];
+        byLottery[key].push(game);
+      });
+
+      Object.entries(byLottery).forEach(([lotteryId, games]) => {
+        if (y + 24 > H - 15) { doc.addPage(); y = 20; }
+
+        // Cabeçalho do grupo
+        doc.setFontSize(11);
+        doc.setTextColor(0, 160, 220);
+        doc.setFont('helvetica', 'bold');
+        doc.text(getLotteryName(lotteryId).toUpperCase(), MARGIN, y);
+
+        doc.setFontSize(8.5);
+        doc.setTextColor(120, 120, 140);
+        doc.setFont('helvetica', 'normal');
+        const contestSample = games[0]?.contestNumber;
+        doc.text(
+          `${games.length} jogo${games.length !== 1 ? 's' : ''}${contestSample ? `  •  Concurso #${contestSample}` : ''}`,
+          MARGIN,
+          y + 6,
+        );
+        y += 13;
+        doc.setDrawColor(0, 160, 220);
+        doc.setLineWidth(0.3);
+        doc.line(MARGIN, y, W - MARGIN, y);
+        y += 5;
+
+        games.forEach((game: any) => {
+          if (y > H - 15) { doc.addPage(); y = 20; }
+          const seq = (game.selectedNumbers as number[])
+            .sort((a: number, b: number) => a - b)
+            .map((n: number) => n.toString().padStart(2, '0'))
+            .join('');
+          doc.setFontSize(9.5);
+          doc.setTextColor(20, 20, 20);
+          doc.setFont('courier', 'normal');
+          doc.text(seq, MARGIN, y);
+          y += LINE - 0.5;
+        });
+
+        y += 7;
+      });
+
+      // Rodapé
+      const pages = (doc.internal as any).getNumberOfPages?.() ?? 1;
+      for (let p = 1; p <= pages; p++) {
+        doc.setPage(p);
+        doc.setFontSize(7);
+        doc.setTextColor(160, 160, 180);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Shark Loterias — Uso pessoal | Página ${p} de ${pages}`, W / 2, H - 8, { align: 'center' });
+      }
+
+      doc.save(`Shark_Compacto_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+    } catch {
+      alert('Erro ao gerar PDF compacto.');
     }
   };
 
@@ -599,10 +554,46 @@ export default function Results() {
         <div className="text-center mb-5">
           <h2 className="text-xl sm:text-2xl font-bold neon-text text-primary mb-1">Resultados 📊</h2>
           <p className="text-xs sm:text-sm text-muted-foreground">Confira seus acertos, transmissão ao vivo e prêmios</p>
+
           <div className="flex justify-center mt-3 gap-2 flex-wrap">
-            <Button onClick={exportToPDF} className="bg-primary hover:bg-primary/80 text-black flex items-center gap-2 text-xs sm:text-sm">
-              <Download className="h-4 w-4" /> Exportar PDF
-            </Button>
+            {/* Menu de exportar PDF */}
+            <div className="relative">
+              <Button
+                onClick={() => setPdfMenuOpen(v => !v)}
+                className="bg-primary hover:bg-primary/80 text-black flex items-center gap-2 text-xs sm:text-sm"
+              >
+                <Download className="h-4 w-4" /> Exportar PDF ▾
+              </Button>
+              {pdfMenuOpen && (
+                <div
+                  className="absolute left-0 mt-1 w-52 rounded-xl border border-white/10 bg-black/90 backdrop-blur-md shadow-xl z-50 overflow-hidden"
+                  onMouseLeave={() => setPdfMenuOpen(false)}
+                >
+                  <button
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-left hover:bg-white/10 transition-colors"
+                    onClick={() => { setPdfMenuOpen(false); exportPDFDetalhado(); }}
+                  >
+                    <FileText className="h-4 w-4 text-primary shrink-0" />
+                    <div>
+                      <div className="font-semibold text-white leading-tight">PDF Detalhado</div>
+                      <div className="text-[10px] text-muted-foreground leading-tight">Modalidade, concurso, dezenas, estratégia</div>
+                    </div>
+                  </button>
+                  <div className="border-t border-white/10" />
+                  <button
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-left hover:bg-white/10 transition-colors"
+                    onClick={() => { setPdfMenuOpen(false); exportPDFCompacto(); }}
+                  >
+                    <AlignJustify className="h-4 w-4 text-primary shrink-0" />
+                    <div>
+                      <div className="font-semibold text-white leading-tight">PDF Compacto</div>
+                      <div className="text-[10px] text-muted-foreground leading-tight">Só dezenas por linha (0203040506...)</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
             <Button
               variant="outline"
               onClick={handleClearAllGames}
@@ -615,12 +606,13 @@ export default function Results() {
           </div>
         </div>
 
+        {/* Cards de estatísticas */}
         <div className="grid grid-cols-2 gap-2 mb-5">
           {[
-            { label: "Total de Jogos", val: userStats?.totalGames ?? 0, icon: Trophy, color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" },
-            { label: "Premiados", val: userStats?.wins ?? 0, icon: Medal, color: "text-neon-green", bg: "bg-green-500/10", border: "border-green-500/20" },
-            { label: "Taxa de Acerto", val: `${userStats?.accuracy || 0}%`, icon: BarChart3, color: "text-accent", bg: "bg-accent/10", border: "border-accent/20" },
-            { label: "Total Ganho", val: `R$ ${totalPrizeWon.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: DollarSign, color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20" }
+            { label: "Total de Jogos", val: userStats?.totalGames ?? 0,     icon: Trophy,    color: "text-primary",    bg: "bg-primary/10",     border: "border-primary/20"     },
+            { label: "Premiados",      val: userStats?.wins ?? 0,            icon: Medal,     color: "text-neon-green", bg: "bg-green-500/10",   border: "border-green-500/20"   },
+            { label: "Taxa de Acerto", val: `${userStats?.accuracy || 0}%`,  icon: BarChart3, color: "text-accent",     bg: "bg-accent/10",      border: "border-accent/20"      },
+            { label: "Total Ganho",    val: `R$ ${totalPrizeWon.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: DollarSign, color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20" },
           ].map((stat, i) => (
             <Card key={i} className={`bg-black/20 border ${stat.border}`}>
               <CardContent className="p-2 sm:p-3 flex flex-col items-center text-center">
@@ -636,7 +628,7 @@ export default function Results() {
           ))}
         </div>
 
-        {/* Só exibe o card ao vivo quando a Caixa confirmar sorteio em andamento */}
+        {/* Card ao vivo — só aparece quando há sorteio em andamento */}
         {liveStatus?.isLive ? (
           <LiveSorteioCard userGames={gamesList} />
         ) : (
@@ -648,8 +640,7 @@ export default function Results() {
           </Card>
         )}
 
-        <ImportadorDezenas />
-
+        {/* Filtros */}
         <Card className="bg-white/[0.04] mb-4 p-3">
           <div className="grid grid-cols-1 gap-2">
             <Select value={filterLottery} onValueChange={setFilterLottery}>
@@ -667,6 +658,7 @@ export default function Results() {
           </div>
         </Card>
 
+        {/* Histórico */}
         <Card className="bg-white/[0.04] backdrop-blur-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-primary text-base">Histórico de Jogos</CardTitle>
@@ -676,7 +668,7 @@ export default function Results() {
               <div className="animate-pulse text-sm text-muted-foreground py-4 text-center">Carregando...</div>
             ) : (
               <div className="space-y-3">
-                {filteredGames.length > 0 ? filteredGames.map((game: any, index: number) => (
+                {filteredGames.length > 0 ? filteredGames.map((game: any) => (
                   <Card key={game.id} className="bg-white/[0.04] border-border/50">
                     <CardContent className="p-3">
                       <div className="flex justify-between items-center mb-2 flex-wrap gap-1">
@@ -705,7 +697,7 @@ export default function Results() {
           </CardContent>
         </Card>
       </main>
-      <CelebrationAnimation isVisible={showCelebration} prizeAmount={celebrationPrize} onComplete={() => setShowCelebration(false)} />
+      <CelebrationAnimation isVisible={false} prizeAmount={undefined} onComplete={() => {}} />
     </div>
   );
 }
