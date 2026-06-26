@@ -132,7 +132,7 @@ export default function Sobre() {
         </Card>
 
         {/* Seção de Doação PIX */}
-        <Card className="bg-gradient-to-br from-green-950/40 via-black/40 to-emerald-950/30 backdrop-blur-md border border-green-500/30 mb-6 relative overflow-hidden">
+        <Card className="mb-6 relative overflow-hidden">
           {/* Brilho de fundo */}
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent pointer-events-none" />
 

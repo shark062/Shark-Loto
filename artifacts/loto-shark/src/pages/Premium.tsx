@@ -75,7 +75,7 @@ export default function Premium() {
 
         {/* Current Plan */}
         {isPremium && (
-          <Card className="bg-gradient-to-r from-neon-gold/20 to-primary/20 border-neon-gold/50 mb-8">
+          <Card className="mb-8">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>

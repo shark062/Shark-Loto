@@ -625,7 +625,7 @@ export default function Results() {
             { label: "Taxa de Acerto", val: `${userStats?.accuracy || 0}%`,  icon: BarChart3, color: "text-accent",     bg: "bg-accent/10",      border: "border-accent/20"      },
             { label: "Total Ganho",    val: `R$ ${totalPrizeWon.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: DollarSign, color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20" },
           ].map((stat, i) => (
-            <Card key={i} className={`bg-black/20 border ${stat.border}`}>
+            <Card key={i}>
               <CardContent className="p-2 sm:p-3 flex flex-col items-center text-center">
                 <div className={`w-7 h-7 sm:w-8 sm:h-8 ${stat.bg} rounded-lg flex items-center justify-center mb-1.5`}>
                   <stat.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${stat.color}`} />

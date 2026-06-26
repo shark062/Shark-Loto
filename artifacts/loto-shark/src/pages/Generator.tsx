@@ -481,7 +481,7 @@ export default function Generator() {
                       </div>
 
                       {/* Grid de números - Cartela estilo mapa de calor */}
-                      <div className="bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-3 mb-3 border border-white/20 shadow-lg">
+                      <div className="glass-card rounded-xl p-3 mb-3 shadow-lg">
                         <div className="number-grid grid grid-cols-10 gap-1.5">
                           {Array.from({ length: selectedLottery.totalNumbers }, (_, i) => {
                             const number = i + 1;

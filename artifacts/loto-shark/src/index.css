@@ -54,6 +54,14 @@
 }
 
 
+/* ── Glass card — padrão único para todos os cards da aplicação ── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 * {
   margin: 0;
   padding: 0;

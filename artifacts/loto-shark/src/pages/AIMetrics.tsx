@@ -138,7 +138,7 @@ export default function AIMetrics() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6 mt-6">
             <div className="grid grid-cols-1 gap-6">
-              <Card className="bg-slate-800/50 border-purple-500/20">
+              <Card className="">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center justify-center gap-2">
                     <Target className="h-5 w-5 text-emerald-400" />
@@ -159,7 +159,7 @@ export default function AIMetrics() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-purple-500/20">
+              <Card className="">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center justify-center gap-2">
                     <Activity className="h-5 w-5 text-blue-400" />
@@ -183,7 +183,7 @@ export default function AIMetrics() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-purple-500/20">
+              <Card className="">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center justify-center gap-2">
                     <Award className="h-5 w-5 text-yellow-400" />
@@ -212,7 +212,7 @@ export default function AIMetrics() {
             </div>
 
             {/* Radar Chart */}
-            <Card className="bg-slate-800/50 border-purple-500/20">
+            <Card className="">
               <CardHeader>
                 <CardTitle className="text-white">Análise Multidimensional dos Modelos</CardTitle>
                 <CardDescription className="text-purple-200">
@@ -255,7 +255,7 @@ export default function AIMetrics() {
 
           {/* Performance Tab */}
           <TabsContent value="performance" className="space-y-6 mt-6">
-            <Card className="bg-slate-800/50 border-purple-500/20">
+            <Card className="">
               <CardHeader>
                 <CardTitle className="text-white">Performance Individual dos Modelos</CardTitle>
               </CardHeader>
@@ -281,7 +281,7 @@ export default function AIMetrics() {
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-800/50 border-purple-500/20">
+            <Card className="">
               <CardHeader>
                 <CardTitle className="text-white">Evolução Temporal</CardTitle>
                 <CardDescription className="text-purple-200">
@@ -353,7 +353,7 @@ export default function AIMetrics() {
                   weaknesses: ['Variabilidade em resultados']
                 }
               ]).map((model: any, index: number) => (
-                <Card key={model.modelName} className="bg-slate-800/50 border-purple-500/20">
+                <Card key={model.modelName} className="">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center justify-between">
                       <span className="flex items-center gap-2">
@@ -415,7 +415,7 @@ export default function AIMetrics() {
 
           {/* Recommendations Tab */}
           <TabsContent value="recommendations" className="space-y-6 mt-6">
-            <Card className="bg-slate-800/50 border-purple-500/20">
+            <Card className="">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Brain className="h-5 w-5 text-purple-400" />
@@ -446,7 +446,7 @@ export default function AIMetrics() {
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-800/50 border-purple-500/20">
+            <Card className="">
               <CardHeader>
                 <CardTitle className="text-white">Estratégia Ótima Detectada</CardTitle>
               </CardHeader>

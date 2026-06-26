@@ -55,7 +55,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-black/40 border-primary/30">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <Zap className="h-7 w-7 text-primary neon-glow" />
