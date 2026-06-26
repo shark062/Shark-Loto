@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useLotteryTypes, useUserStats } from "@/hooks/useLotteryData";
 import { apiFetch, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { MCPAnalyzer } from "@/components/MCPAnalyzer";
 import { 
   Brain, 
   TrendingUp, 
@@ -26,7 +27,8 @@ import {
   Calculator,
   Calendar,
   Trophy,
-  DollarSign
+  DollarSign,
+  Database
 } from "lucide-react";
 
 interface AIAnalysisResult {
@@ -83,7 +85,7 @@ interface GameResult {
 export default function AIAnalysis() {
   const [, setLocation] = useLocation();
   const [selectedLottery, setSelectedLottery] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'pattern' | 'prediction' | 'strategy' | 'real-prediction'>('prediction');
+  const [activeTab, setActiveTab] = useState<'pattern' | 'prediction' | 'strategy' | 'real-prediction' | 'mcp'>('prediction');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [realPrediction, setRealPrediction] = useState<any>(null);
   const [isLoadingRealPrediction, setIsLoadingRealPrediction] = useState(false);
@@ -279,7 +281,7 @@ export default function AIAnalysis() {
           </Select>
 
           <div className="flex gap-2 flex-wrap">
-            {(['pattern', 'prediction', 'strategy', 'real-prediction'] as const).map((tab) => (
+            {(['pattern', 'prediction', 'strategy', 'real-prediction', 'mcp'] as const).map((tab) => (
               <Button
                 key={tab}
                 variant={activeTab === tab ? "default" : "outline"}
@@ -296,7 +298,8 @@ export default function AIAnalysis() {
                 {tab === 'prediction' && <Brain className="h-4 w-4 mr-2" />}
                 {tab === 'strategy' && <Target className="h-4 w-4 mr-2" />}
                 {tab === 'real-prediction' && <Sparkles className="h-4 w-4 mr-2" />}
-                {tab === 'pattern' ? 'Padrões' : tab === 'prediction' ? 'Predições' : tab === 'strategy' ? 'Estratégias' : 'Prognóstico Real'}
+                {tab === 'mcp' && <Database className="h-4 w-4 mr-2" />}
+                {tab === 'pattern' ? 'Padrões' : tab === 'prediction' ? 'Predições' : tab === 'strategy' ? 'Estratégias' : tab === 'real-prediction' ? 'Prognóstico Real' : 'MCP Dados Reais'}
               </Button>
             ))}
           </div>
@@ -733,6 +736,14 @@ export default function AIAnalysis() {
                     <p className="text-sm mb-6">Clique em "Gerar Prognóstico" para análise baseada em dados históricos reais</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          )}
+          {/* MCP Analyzer */}
+          {activeTab === 'mcp' && (
+            <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+              <CardContent className="p-5">
+                <MCPAnalyzer />
               </CardContent>
             </Card>
           )}
