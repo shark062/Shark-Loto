@@ -5,7 +5,7 @@ import {
   fetchHistoricalDraws,
   computeFrequencies,
 } from "../lib/lotteryData";
-import { providers, getProviderApiKey } from "../lib/aiProviders";
+import { providers, getProviderApiKey, getEffectiveApiKey } from "../lib/aiProviders";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -324,9 +324,11 @@ function checkOutput(text: string): { valid: boolean; warning?: string } {
 // ── Obter client Anthropic (usa chave configurada nos providers) ───────────────
 
 function getAnthropicClient(): Anthropic | null {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (apiKey) return new Anthropic({ apiKey });
+  // Tenta env vars (múltiplas variantes de nome) via getEffectiveApiKey
+  const fromEnv = getEffectiveApiKey("anthropic");
+  if (fromEnv) return new Anthropic({ apiKey: fromEnv });
 
+  // Fallback: chave salva no banco
   for (const p of providers.values()) {
     if (p.type === "anthropic" && p.enabled) {
       const key = getProviderApiKey(p);

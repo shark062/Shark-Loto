@@ -36,38 +36,43 @@ export interface EvolutionLogEntry {
 export const providers = new Map<string, ProviderConfig>();
 export const evolutionLog: EvolutionLogEntry[] = [];
 
-// ─── Mapeamento tipo → variável de ambiente (chave sempre vem do env) ─────────
+// ─── Mapeamento tipo → variáveis de ambiente (tenta múltiplos nomes) ──────────
+// Replit permite nomes com capitalização mista; mapeamos todas as variantes.
 
-export const PROVIDER_ENV_KEYS: Record<string, string> = {
-  openai:     "OPENAI_API_KEY",
-  anthropic:  "ANTHROPIC_API_KEY",
-  gemini:     "GOOGLE_API_KEY",
-  groq:       "GROQ_API_KEY",
-  deepseek:   "DEEPSEEK_API_KEY",
-  openrouter: "OPENROUTER_API_KEY",
-  mistral:    "MISTRAL_API_KEY",
-  cohere:     "COHERE_API_KEY",
-  together:   "TOGETHER_API_KEY",
+export const PROVIDER_ENV_KEYS: Record<string, string[]> = {
+  openai:     ["OPENAI_API_KEY",     "OpenAI_API_KEY",    "openai_api_key"],
+  anthropic:  ["ANTHROPIC_API_KEY",  "Anthropic_API_KEY", "anthropic_api_key"],
+  gemini:     ["GOOGLE_API_KEY",     "Google_API_KEY",    "google_api_key"],
+  groq:       ["GROQ_API_KEY",       "Groq_API_KEY",      "groq_api_key"],
+  deepseek:   ["DEEPSEEK_API_KEY",   "Deepseek_API_KEY",  "deepseek_api_key"],
+  openrouter: ["OPENROUTER_API_KEY", "OpenRouter_API_KEY","openrouter_api_key"],
+  mistral:    ["MISTRAL_API_KEY",    "Mistral_API_Key",   "mistral_api_key"],
+  cohere:     ["COHERE_API_KEY",     "Chore_API_KEY",     "cohere_api_key"],
+  together:   ["TOGETHER_API_KEY",   "Together_API_KEY",  "together_api_key"],
 };
 
 /**
- * Retorna a chave de API: primeiro tenta a chave salva no banco (provider.apiKey),
- * e cai no process.env como fallback se a chave salva for "__env__" ou vazia.
+ * Tenta cada variante de nome de env var para o tipo de provider.
+ * Retorna o primeiro valor encontrado ou null.
  */
 export function getEffectiveApiKey(type: string): string | null {
-  const envVar = PROVIDER_ENV_KEYS[type];
-  if (!envVar) return null;
-  return process.env[envVar] || null;
+  const variants = PROVIDER_ENV_KEYS[type];
+  if (!variants) return null;
+  for (const envVar of variants) {
+    const val = process.env[envVar];
+    if (val && val.trim() !== "") return val.trim();
+  }
+  return null;
 }
 
 /**
  * Retorna a chave real de um provider específico:
  * - Se o provider tem chave salva no banco (não "__env__"), usa ela.
- * - Caso contrário, lê do process.env.
+ * - Caso contrário, tenta todas as variantes de env var.
  */
 export function getProviderApiKey(provider: ProviderConfig): string | null {
-  if (provider.apiKey && provider.apiKey !== "__env__") {
-    return provider.apiKey;
+  if (provider.apiKey && provider.apiKey !== "__env__" && provider.apiKey.trim() !== "") {
+    return provider.apiKey.trim();
   }
   return getEffectiveApiKey(provider.type);
 }
@@ -475,7 +480,7 @@ export function recalcPriorities(): void {
   sorted.forEach((p, i) => { p.priority = i; });
 }
 
-// ─── Initialize providers: registra configs no banco, chave NUNCA é salva ─────
+// ─── Initialize providers: registra configs no banco e sincroniza chaves ───────
 
 export async function initDefaultProviders(): Promise<void> {
   await loadProvidersFromDB();
@@ -493,25 +498,33 @@ export async function initDefaultProviders(): Promise<void> {
 
   let added = 0;
   let withKey = 0;
+  let synced = 0;
 
   for (const ep of envProviders) {
-    const hasKey = !!getEffectiveApiKey(ep.type);
+    const envKey = getEffectiveApiKey(ep.type);
     const existing = [...providers.values()].find((p) => p.type === ep.type);
 
     if (!existing) {
-      await addProvider({ type: ep.type, name: ep.name });
+      // Novo provider: cria já com a chave do env (se disponível)
+      await addProvider({ type: ep.type, name: ep.name, apiKey: envKey ?? "__env__" });
       added++;
+    } else if (envKey && (existing.apiKey === "__env__" || existing.apiKey === "" || !existing.apiKey)) {
+      // Provider existente com chave __env__: sincroniza a chave real do env para o banco
+      existing.apiKey = envKey;
+      await persistProvider(existing);
+      synced++;
     }
 
-    if (hasKey) withKey++;
+    if (envKey) withKey++;
   }
 
   if (added > 0) logger.info({ added }, "Novos providers registrados no banco");
+  if (synced > 0) logger.info({ synced }, "Chaves de API sincronizadas do env para o banco");
 
-  const activeWithKey = [...providers.values()].filter(p => p.enabled && !!getEffectiveApiKey(p.type));
+  const activeWithKey = [...providers.values()].filter(p => p.enabled && !!getProviderApiKey(p));
   logger.info(
     { withKey, activeWithKey: activeWithKey.length },
-    "Providers prontos (chave lida do process.env em tempo real)"
+    "Providers prontos"
   );
 
   if (withKey === 0) {
