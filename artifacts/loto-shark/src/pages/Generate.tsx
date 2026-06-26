@@ -2,18 +2,19 @@ import { useState } from "react";
 import { NeonCard } from "@/components/NeonCard";
 import { NumberBall } from "@/components/NumberBall";
 import { useGenerateNumbers, useSaveGame } from "@/hooks/use-lottery";
-import { Flame, Snowflake, Sparkles, Shuffle, Save, CheckCircle, RotateCw } from "lucide-react";
+import { Flame, Snowflake, Sparkles, Shuffle, Save, CheckCircle, RotateCw, BrainCircuit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { SelectShark } from "@/components/ui/SelectShark";
 
-type Strategy = "hot" | "cold" | "mixed" | "random";
+type Strategy = "hot" | "cold" | "mixed" | "random" | "avancado";
 
 const strategies = [
-  { id: "hot", icon: Flame, label: "HOT", color: "text-red-500", desc: "Frequent numbers" },
-  { id: "cold", icon: Snowflake, label: "COLD", color: "text-blue-400", desc: "Rare numbers" },
-  { id: "mixed", icon: Sparkles, label: "MIXED", color: "text-purple-400", desc: "Balanced probability" },
-  { id: "random", icon: Shuffle, label: "RANDOM", color: "text-green-400", desc: "Pure chaos" },
+  { id: "hot",      icon: Flame,        label: "HOT",      color: "text-red-500",    desc: "Números mais frequentes recentemente" },
+  { id: "cold",     icon: Snowflake,    label: "COLD",     color: "text-blue-400",   desc: "Dezenas com maior atraso acumulado" },
+  { id: "mixed",    icon: Sparkles,     label: "MIXED",    color: "text-purple-400", desc: "Combinação equilibrada quente + fria" },
+  { id: "random",   icon: Shuffle,      label: "RANDOM",   color: "text-green-400",  desc: "Seleção aleatória pura" },
+  { id: "avancado", icon: BrainCircuit, label: "AVANÇADO", color: "text-cyan-400",   desc: "Ensemble: correlação, periodicidade, decaimento e centralidade" },
 ] as const;
 
 export default function Generate() {

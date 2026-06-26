@@ -4,6 +4,7 @@ import lotteryRouter from "./lottery";
 import { Request, Response } from "express";
 import { LOTTERIES, fetchLatestDraw, fetchHistoricalDraws, computeFrequencies } from "../lib/lotteryData";
 import { gerarJogosMaster, gerarDesdobramento } from "../core/sharkEngine";
+import { gerarJogosAvancado } from "../core/advancedEngine";
 import { db, userGamesTable } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
 
@@ -386,27 +387,30 @@ router.delete("/games", async (req: Request, res: Response) => {
 
 // Pesos por estratégia — define o comportamento do Shark Engine por modo
 const STRATEGY_PESOS: Record<string, { frequencia: number; atraso: number; repeticao: number }> = {
-  hot:   { frequencia: 0.70, atraso: 0.15, repeticao: 0.15 }, // Prioriza quentes (alta freq recente)
-  cold:  { frequencia: 0.15, atraso: 0.70, repeticao: 0.15 }, // Prioriza frias (maior atraso)
-  mixed: { frequencia: 0.50, atraso: 0.30, repeticao: 0.20 }, // Equilibrado quente+fria
-  ai:    { frequencia: 0.40, atraso: 0.40, repeticao: 0.20 }, // Análise avançada: pesos iguais
-  shark: { frequencia: 0.50, atraso: 0.30, repeticao: 0.20 }, // Motor master (pesos do request têm prioridade)
+  hot:      { frequencia: 0.70, atraso: 0.15, repeticao: 0.15 },
+  cold:     { frequencia: 0.15, atraso: 0.70, repeticao: 0.15 },
+  mixed:    { frequencia: 0.50, atraso: 0.30, repeticao: 0.20 },
+  ai:       { frequencia: 0.40, atraso: 0.40, repeticao: 0.20 },
+  shark:    { frequencia: 0.50, atraso: 0.30, repeticao: 0.20 },
+  avancado: { frequencia: 0.30, atraso: 0.25, repeticao: 0.20 }, // não usado — engine própria
 };
 
 const STRATEGY_LABEL: Record<string, string> = {
-  hot:   'Números Quentes',
-  cold:  'Dezenas Frias',
-  mixed: 'Estratégia Mista',
-  ai:    'IA Avançada',
-  shark: 'Motor Shark Master',
+  hot:      'Números Quentes',
+  cold:     'Dezenas Frias',
+  mixed:    'Estratégia Mista',
+  ai:       'IA Avançada',
+  shark:    'Motor Shark Master',
+  avancado: 'Motor Avançado (Ensemble)',
 };
 
 const STRATEGY_REASONING: Record<string, string> = {
-  hot:   'Análise dos 30 últimos sorteios — prioriza dezenas com alta frequência recente (quentes)',
-  cold:  'Análise dos 30 últimos sorteios — prioriza dezenas com maior atraso acumulado (frias/vencidas)',
-  mixed: 'Análise dos 30 últimos sorteios — combina quentes (frequência recente) + frias (atraso) equilibrado',
-  ai:    'Análise dos 30 últimos sorteios — pesos iguais para frequência recente e atraso, análise estatística completa',
-  shark: 'Motor Shark Master — desdobramento quente/fria com score de variação sobre os 30 últimos sorteios',
+  hot:      'Análise dos 30 últimos sorteios — prioriza dezenas com alta frequência recente (quentes)',
+  cold:     'Análise dos 30 últimos sorteios — prioriza dezenas com maior atraso acumulado (frias/vencidas)',
+  mixed:    'Análise dos 30 últimos sorteios — combina quentes (frequência recente) + frias (atraso) equilibrado',
+  ai:       'Análise dos 30 últimos sorteios — pesos iguais para frequência recente e atraso, análise estatística completa',
+  shark:    'Motor Shark Master — desdobramento quente/fria com score de variação sobre os 30 últimos sorteios',
+  avancado: 'Motor Avançado Ensemble — correlação (co-ocorrência), decaimento exponencial, periodicidade e centralidade por autovetor (PCA-lite)',
 };
 
 router.post("/games/generate", async (req: Request, res: Response) => {
@@ -438,15 +442,10 @@ router.post("/games/generate", async (req: Request, res: Response) => {
         }
       : pesosEstrategia;
 
-    // TODAS as estratégias passam pelo Shark Engine v3 com análise estatística avançada
-    const { jogos, contexto } = gerarJogosMaster(
-      draws,
-      count,
-      lottery.totalNumbers,
-      qty,
-      pesosFinais,
-      lotteryId,
-    );
+    // Despacha para o motor correto conforme estratégia
+    const { jogos, contexto } = strategy === 'avancado'
+      ? gerarJogosAvancado(draws, count, lottery.totalNumbers, qty, lotteryId)
+      : gerarJogosMaster(draws, count, lottery.totalNumbers, qty, pesosFinais, lotteryId);
 
     const insertValues = jogos.map(result => ({
       lotteryId,
