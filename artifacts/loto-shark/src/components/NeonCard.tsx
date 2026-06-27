@@ -16,11 +16,14 @@ export function NeonCard({ children, className, glowColor = "none" }: NeonCardPr
   };
 
   return (
-    <div className={cn(
-      "glass-card border border-white/10 rounded-2xl p-6 relative overflow-hidden group transition-all duration-300",
-      glows[glowColor],
-      className
-    )}>
+    <div
+      style={{ background: "rgba(255, 255, 255, 0.40)", border: "1px solid rgba(255, 255, 255, 0.55)" }}
+      className={cn(
+        "glass-card rounded-2xl p-6 relative overflow-hidden group transition-all duration-300",
+        glows[glowColor],
+        className
+      )}
+    >
       {/* Scanline effect */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent bg-[length:100%_4px] pointer-events-none" />
       

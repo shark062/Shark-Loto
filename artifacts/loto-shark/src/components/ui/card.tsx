@@ -2,12 +2,18 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+const GLASS_STYLE: React.CSSProperties = {
+  background: "rgba(255, 255, 255, 0.40)",
+  border: "1px solid rgba(255, 255, 255, 0.55)",
+};
+
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+>(({ className, style, ...props }, ref) => (
   <div
     ref={ref}
+    style={{ ...GLASS_STYLE, ...style }}
     className={cn(
       "glass-card rounded-2xl text-card-foreground shadow-md relative",
       className
