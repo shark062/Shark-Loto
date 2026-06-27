@@ -1,10 +1,31 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Flame, Snowflake, Sun } from "lucide-react";
+import { Flame } from "lucide-react";
 import type { NumberFrequency } from "@/types/lottery";
+
+// Grid oficial de cada modalidade (colunas do volante real da Caixa)
+const LOTTERY_COLS: Record<string, number> = {
+  lotofacil:  5,   // 1-25  → 5×5
+  megasena:   10,  // 1-60  → 10×6
+  quina:      10,  // 1-80  → 10×8
+  lotomania:  10,  // 0-99  → 10×10
+  duplasena:  10,  // 1-50  → 10×5
+  timemania:  10,  // 1-80  → 10×8
+  diadesorte: 5,   // 1-31  → 5×7 (approx)
+  supersete:  5,   // 0-9   → 5×2
+};
+
+function getGridCols(lotteryId: string, maxNumbers: number): number {
+  if (LOTTERY_COLS[lotteryId]) return LOTTERY_COLS[lotteryId];
+  // fallback automático por tamanho
+  if (maxNumbers <= 25) return 5;
+  if (maxNumbers <= 35) return 7;
+  return 10;
+}
 
 interface HeatMapGridProps {
   frequencies: NumberFrequency[];
   maxNumbers: number;
+  lotteryId?: string;
   isLoading?: boolean;
   onNumberClick?: (number: number) => void;
 }
@@ -12,9 +33,12 @@ interface HeatMapGridProps {
 export default function HeatMapGrid({
   frequencies,
   maxNumbers,
+  lotteryId = '',
   isLoading,
   onNumberClick
 }: HeatMapGridProps) {
+  const cols = getGridCols(lotteryId, maxNumbers);
+
   const getNumberStyle = (number: number) => {
     const freq = frequencies.find(f => f.number === number);
     const temperature = freq?.temperature || 'cold';
@@ -28,15 +52,6 @@ export default function HeatMapGrid({
     return styles[temperature];
   };
 
-  const getTemperatureIcon = (temperature: string) => {
-    switch (temperature) {
-      case 'hot': return '🔥';
-      case 'warm': return '♨️';
-      case 'cold': return '❄️';
-      default: return '❄️';
-    }
-  };
-
   if (isLoading) {
     return (
       <Card>
@@ -47,8 +62,11 @@ export default function HeatMapGrid({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="number-grid grid grid-cols-10 gap-1.5 mb-4">
-            {[...Array(60)].map((_, i) => (
+          <div
+            className="number-grid gap-1.5 mb-4"
+            style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+          >
+            {[...Array(maxNumbers || 25)].map((_, i) => (
               <div
                 key={i}
                 className="aspect-square bg-white/[0.07] rounded-lg animate-pulse"
@@ -71,7 +89,8 @@ export default function HeatMapGrid({
       <CardContent>
         {/* Numbers Grid */}
         <div
-          className="number-grid mb-6 grid grid-cols-10 gap-1.5"
+          className="number-grid mb-6"
+          style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: '6px' }}
         >
           {Array.from({ length: maxNumbers }, (_, i) => {
             const number = i + 1;

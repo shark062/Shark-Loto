@@ -188,6 +188,7 @@ export default function HeatMap() {
             <HeatMapGrid
               frequencies={frequencies || []}
               maxNumbers={selectedLotteryData.totalNumbers}
+              lotteryId={selectedLottery}
               isLoading={frequenciesLoading}
               onNumberClick={setSelectedNumber}
             />
