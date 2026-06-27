@@ -318,7 +318,7 @@ router.get("/:id/frequency", async (req, res) => {
 
   try {
     const draws       = await fetchHistoricalDraws(req.params.id, 30);
-    const frequencies = computeFrequencies(lottery.totalNumbers, draws);
+    const frequencies = computeFrequencies(lottery.totalNumbers, draws, lottery.startNumber ?? 1);
 
     const hot  = frequencies.filter(f => f.temperature === 'hot');
     const cold = frequencies.filter(f => f.temperature === 'cold');
@@ -339,7 +339,7 @@ router.get("/:id/frequency", async (req, res) => {
       },
     });
   } catch {
-    res.json({ frequencies: computeFrequencies(lottery.totalNumbers, []), meta: {} });
+    res.json({ frequencies: computeFrequencies(lottery.totalNumbers, [], lottery.startNumber ?? 1), meta: {} });
   }
 });
 

@@ -7,7 +7,7 @@ import type { LotteryContext, DrawData } from "../lib/aiEnsemble";
 const router = Router();
 
 function buildContext(lotteryId: string, lottery: any, draws: number[][]): LotteryContext {
-  const freqs = computeFrequencies(lottery.totalNumbers, draws);
+  const freqs = computeFrequencies(lottery.totalNumbers, draws, lottery.startNumber ?? 1);
   const sorted = [...freqs].sort((a, b) => b.frequency - a.frequency);
 
   const hotCut  = Math.floor(sorted.length * 0.25);
@@ -58,7 +58,7 @@ router.get("/generate/:lotteryId", async (req, res) => {
 
     if (stats.active === 0) {
       // Statistical fallback
-      const freqs = computeFrequencies(lottery.totalNumbers, draws);
+      const freqs = computeFrequencies(lottery.totalNumbers, draws, lottery.startNumber ?? 1);
       const primary = generateSmartNumbers(freqs, lottery.minNumbers, "mixed", lottery.totalNumbers);
       res.json({
         lotteryId,
@@ -119,7 +119,7 @@ router.post("/ensemble", async (req, res) => {
     const { stats } = listProviders();
 
     if (stats.active === 0) {
-      const freqs = computeFrequencies(lottery.totalNumbers, draws);
+      const freqs = computeFrequencies(lottery.totalNumbers, draws, lottery.startNumber ?? 1);
       const games = Array.from({ length: Math.min(gamesCount, 10) }, () => ({
         numbers: generateSmartNumbers(freqs, lottery.minNumbers, "mixed", lottery.totalNumbers),
         source: "Estatístico",

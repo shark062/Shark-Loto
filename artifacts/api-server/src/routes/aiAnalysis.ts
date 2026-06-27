@@ -9,7 +9,7 @@ const analysisCache = new Map<string, { data: any; ts: number }>();
 const CACHE_TTL = 5 * 60 * 1000;
 
 function buildContext(lotteryId: string, lottery: any, draws: number[][]): LotteryContext {
-  const freqs = computeFrequencies(lottery.totalNumbers, draws);
+  const freqs = computeFrequencies(lottery.totalNumbers, draws, lottery.startNumber ?? 1);
   const sorted = [...freqs].sort((a, b) => b.frequency - a.frequency);
   const hotCut  = Math.floor(sorted.length * 0.25);
   const coldCut = Math.floor(sorted.length * 0.75);
@@ -206,7 +206,7 @@ router.get("/optimal-combination/:lotteryId", async (req, res) => {
 
   try {
     const draws = await fetchHistoricalDraws(lotteryId, 50).catch(() => [] as number[][]);
-    const freqs = computeFrequencies(lottery.totalNumbers, draws);
+    const freqs = computeFrequencies(lottery.totalNumbers, draws, lottery.startNumber ?? 1);
     const ctx = buildContext(lotteryId, lottery, draws);
     const { stats } = listProviders();
 

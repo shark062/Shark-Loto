@@ -1,14 +1,14 @@
 const CAIXA_API = 'https://servicebus2.caixa.gov.br/portaldeloterias/api';
 
 export const LOTTERIES = [
-  { id: 'megasena',   displayName: 'Mega-Sena',    emoji: '💎', minNumbers: 6,  maxNumbers: 15, totalNumbers: 60,  drawDays: ['Terça','Quinta','Sábado'],              drawTime: '20:00', isActive: true },
-  { id: 'lotofacil',  displayName: 'Lotofácil',    emoji: '⭐', minNumbers: 15, maxNumbers: 20, totalNumbers: 25,  drawDays: ['Seg','Ter','Qua','Qui','Sex','Sáb'],    drawTime: '20:00', isActive: true },
-  { id: 'quina',      displayName: 'Quina',        emoji: '🪙', minNumbers: 5,  maxNumbers: 15, totalNumbers: 80,  drawDays: ['Seg','Ter','Qua','Qui','Sex','Sáb'],    drawTime: '20:00', isActive: true },
-  { id: 'lotomania',  displayName: 'Lotomania',    emoji: '♾️', minNumbers: 50, maxNumbers: 50, totalNumbers: 100, drawDays: ['Seg','Qua','Sex'],                      drawTime: '20:00', isActive: true },
-  { id: 'duplasena',  displayName: 'Dupla Sena',   emoji: '👑', minNumbers: 6,  maxNumbers: 15, totalNumbers: 50,  drawDays: ['Ter','Qui','Sáb'],                      drawTime: '20:00', isActive: true },
-  { id: 'timemania',  displayName: 'Timemania',    emoji: '⚽', minNumbers: 10, maxNumbers: 10, totalNumbers: 80,  drawDays: ['Ter','Qui','Sáb'],                      drawTime: '20:00', isActive: true },
-  { id: 'diadesorte', displayName: 'Dia de Sorte', emoji: '🍀', minNumbers: 7,  maxNumbers: 15, totalNumbers: 31,  drawDays: ['Ter','Qui','Sáb'],                      drawTime: '20:00', isActive: true },
-  { id: 'supersete',  displayName: 'Super Sete',   emoji: '7️⃣', minNumbers: 7,  maxNumbers: 7,  totalNumbers: 10,  drawDays: ['Ter','Qui','Sáb'],                      drawTime: '20:00', isActive: true },
+  { id: 'megasena',   displayName: 'Mega-Sena',    emoji: '💎', minNumbers: 6,  maxNumbers: 15, totalNumbers: 60,  startNumber: 1, drawDays: ['Terça','Quinta','Sábado'],              drawTime: '20:00', isActive: true },
+  { id: 'lotofacil',  displayName: 'Lotofácil',    emoji: '⭐', minNumbers: 15, maxNumbers: 20, totalNumbers: 25,  startNumber: 1, drawDays: ['Seg','Ter','Qua','Qui','Sex','Sáb'],    drawTime: '20:00', isActive: true },
+  { id: 'quina',      displayName: 'Quina',        emoji: '🪙', minNumbers: 5,  maxNumbers: 15, totalNumbers: 80,  startNumber: 1, drawDays: ['Seg','Ter','Qua','Qui','Sex','Sáb'],    drawTime: '20:00', isActive: true },
+  { id: 'lotomania',  displayName: 'Lotomania',    emoji: '♾️', minNumbers: 50, maxNumbers: 50, totalNumbers: 100, startNumber: 0, drawDays: ['Seg','Qua','Sex'],                      drawTime: '20:00', isActive: true },
+  { id: 'duplasena',  displayName: 'Dupla Sena',   emoji: '👑', minNumbers: 6,  maxNumbers: 15, totalNumbers: 50,  startNumber: 1, drawDays: ['Ter','Qui','Sáb'],                      drawTime: '20:00', isActive: true },
+  { id: 'timemania',  displayName: 'Timemania',    emoji: '⚽', minNumbers: 10, maxNumbers: 10, totalNumbers: 80,  startNumber: 1, drawDays: ['Ter','Qui','Sáb'],                      drawTime: '20:00', isActive: true },
+  { id: 'diadesorte', displayName: 'Dia de Sorte', emoji: '🍀', minNumbers: 7,  maxNumbers: 15, totalNumbers: 31,  startNumber: 1, drawDays: ['Ter','Qui','Sáb'],                      drawTime: '20:00', isActive: true },
+  { id: 'supersete',  displayName: 'Super Sete',   emoji: '7️⃣', minNumbers: 7,  maxNumbers: 7,  totalNumbers: 10,  startNumber: 0, drawDays: ['Ter','Qui','Sáb'],                      drawTime: '20:00', isActive: true },
 ];
 
 export interface NumberFrequency {
@@ -120,12 +120,12 @@ export async function fetchHistoricalDraws(lotteryId: string, count: number = 30
   return draws.slice(0, count);
 }
 
-export function computeFrequencies(totalNumbers: number, draws: number[][]): NumberFrequency[] {
+export function computeFrequencies(totalNumbers: number, draws: number[][], startNumber = 1): NumberFrequency[] {
   const freq:       Record<number, number> = {};
   const recentFreq: Record<number, number> = {};
   const delayMap:   Record<number, number> = {};
 
-  for (let i = 1; i <= totalNumbers; i++) {
+  for (let i = startNumber; i < startNumber + totalNumbers; i++) {
     freq[i] = 0;
     recentFreq[i] = 0;
   }
@@ -138,7 +138,7 @@ export function computeFrequencies(totalNumbers: number, draws: number[][]): Num
   recentDraws.forEach(draw => draw.forEach(n => { if (recentFreq[n] !== undefined) recentFreq[n]++; }));
 
   // Atraso (quantos sorteios consecutivos o número ficou ausente)
-  for (let n = 1; n <= totalNumbers; n++) {
+  for (let n = startNumber; n < startNumber + totalNumbers; n++) {
     const idx = draws.findIndex(d => d.includes(n));
     delayMap[n] = idx === -1 ? draws.length : idx;
   }
@@ -147,7 +147,7 @@ export function computeFrequencies(totalNumbers: number, draws: number[][]): Num
   // Quentes: top 33% por freq recente → maior relevância estatística atual
   // Frias:   top 33% por atraso → maior tempo sem aparecer
   // Mornas:  os 34% restantes
-  const numeros = Array.from({ length: totalNumbers }, (_, i) => i + 1);
+  const numeros = Array.from({ length: totalNumbers }, (_, i) => i + startNumber);
 
   const sortedByRecent = [...numeros].sort((a, b) => (recentFreq[b] || 0) - (recentFreq[a] || 0));
   const sortedByDelay  = [...numeros].sort((a, b) => (delayMap[b] || 0) - (delayMap[a] || 0));

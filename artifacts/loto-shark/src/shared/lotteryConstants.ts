@@ -15,6 +15,7 @@ export interface LotteryConfig {
   minNumbers: number;
   maxNumbers: number;
   totalNumbers: number;
+  startNumber: number;
   drawDays: string[];
   drawTime: string;
   isActive: boolean;
@@ -39,6 +40,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 6,
     maxNumbers: 15,
     totalNumbers: 60,
+    startNumber: 1,
     drawDays: ['Terça', 'Quinta', 'Sábado'],
     drawTime: '20:00',
     isActive: true,
@@ -58,6 +60,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 15,
     maxNumbers: 20,
     totalNumbers: 25,
+    startNumber: 1,
     drawDays: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
     drawTime: '20:00',
     isActive: true,
@@ -79,6 +82,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 5,
     maxNumbers: 15,
     totalNumbers: 80,
+    startNumber: 1,
     drawDays: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
     drawTime: '20:00',
     isActive: true,
@@ -98,6 +102,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 50,
     maxNumbers: 50,
     totalNumbers: 100,
+    startNumber: 0,
     drawDays: ['Seg', 'Qua', 'Sex'],
     drawTime: '20:00',
     isActive: true,
@@ -120,6 +125,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 6,
     maxNumbers: 15,
     totalNumbers: 50,
+    startNumber: 1,
     drawDays: ['Ter', 'Qui', 'Sáb'],
     drawTime: '20:00',
     isActive: true,
@@ -140,6 +146,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 7,
     maxNumbers: 21,
     totalNumbers: 10,
+    startNumber: 0,
     drawDays: ['Ter', 'Qui', 'Sáb'],
     drawTime: '20:00',
     isActive: true,
@@ -161,6 +168,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 6,
     maxNumbers: 12,
     totalNumbers: 50,
+    startNumber: 1,
     drawDays: ['Quarta', 'Sábado'],
     drawTime: '20:00',
     isActive: true,
@@ -181,6 +189,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 10,
     maxNumbers: 10,
     totalNumbers: 80,
+    startNumber: 1,
     drawDays: ['Ter', 'Qui', 'Sáb'],
     drawTime: '20:00',
     isActive: true,
@@ -202,6 +211,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 7,
     maxNumbers: 15,
     totalNumbers: 31,
+    startNumber: 1,
     drawDays: ['Ter', 'Qui', 'Sáb'],
     drawTime: '20:00',
     isActive: true,
@@ -225,6 +235,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 14,
     maxNumbers: 14,
     totalNumbers: 3,
+    startNumber: 1,
     drawDays: ['Segunda'],
     drawTime: '20:00',
     isActive: true,
@@ -257,8 +268,10 @@ export const validateLotteryNumbers = (lotteryId: string, numbers: number[]): bo
     return false;
   }
 
-  // Validar range dos números
-  return numbers.every(num => num >= 1 && num <= config.totalNumbers);
+  // Validar range dos números (startNumber até startNumber + totalNumbers - 1)
+  const start = config.startNumber;
+  const end   = config.startNumber + config.totalNumbers - 1;
+  return numbers.every(num => num >= start && num <= end);
 };
 
 export const getLotteryDisplayInfo = (lotteryId: string) => {

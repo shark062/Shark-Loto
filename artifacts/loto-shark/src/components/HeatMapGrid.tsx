@@ -14,6 +14,9 @@ const LOTTERY_COLS: Record<string, number> = {
   supersete:  5,   // 0-9   → 5×2
 };
 
+// Loterias cujas dezenas começam em 0 (não em 1)
+const ZERO_BASED_LOTTERIES = new Set(['lotomania', 'supersete']);
+
 function getGridCols(lotteryId: string, maxNumbers: number): number {
   if (LOTTERY_COLS[lotteryId]) return LOTTERY_COLS[lotteryId];
   // fallback automático por tamanho
@@ -98,7 +101,8 @@ export default function HeatMapGrid({
           }}
         >
           {Array.from({ length: maxNumbers }, (_, i) => {
-            const number = i + 1;
+            const startNum = ZERO_BASED_LOTTERIES.has(lotteryId) ? 0 : 1;
+            const number = i + startNum;
             const freq = frequencies.find(f => f.number === number);
             const style = getNumberStyle(number);
 
@@ -107,7 +111,7 @@ export default function HeatMapGrid({
                 key={number}
                 onClick={() => onNumberClick?.(number)}
                 className={`aspect-square ${style} rounded-full p-0 overflow-hidden shadow-sm hover:scale-105 transition-all duration-200 cursor-pointer`}
-                title={`Número ${number} - ${freq?.frequency || 0} vezes - ${freq?.temperature || 'cold'}`}
+                title={`Número ${number.toString().padStart(2, '0')} - ${freq?.frequency || 0} vezes - ${freq?.temperature || 'cold'}`}
                 data-testid={`number-${number}`}
                 data-temperature={freq?.temperature || 'cold'}
               >

@@ -11,15 +11,15 @@ import { logger } from "../lib/logger";
 const router = Router();
 
 // ── Regras por modalidade (espelha LOTTERIES, adiciona range) ─────────────────
-const LOTTERY_RULES: Record<string, { min: number; max: number; count: number; totalNumbers: number }> = {
-  megasena:   { min: 1,  max: 60,  count: 6,  totalNumbers: 60  },
-  quina:      { min: 1,  max: 80,  count: 5,  totalNumbers: 80  },
-  lotofacil:  { min: 1,  max: 25,  count: 15, totalNumbers: 25  },
-  lotomania:  { min: 0,  max: 99,  count: 50, totalNumbers: 100 },
-  duplasena:  { min: 1,  max: 50,  count: 6,  totalNumbers: 50  },
-  timemania:  { min: 1,  max: 80,  count: 10, totalNumbers: 80  },
-  diadesorte: { min: 1,  max: 31,  count: 7,  totalNumbers: 31  },
-  supersete:  { min: 0,  max: 9,   count: 7,  totalNumbers: 10  },
+const LOTTERY_RULES: Record<string, { min: number; max: number; count: number; totalNumbers: number; startNumber: number }> = {
+  megasena:   { min: 1,  max: 60,  count: 6,  totalNumbers: 60,  startNumber: 1 },
+  quina:      { min: 1,  max: 80,  count: 5,  totalNumbers: 80,  startNumber: 1 },
+  lotofacil:  { min: 1,  max: 25,  count: 15, totalNumbers: 25,  startNumber: 1 },
+  lotomania:  { min: 0,  max: 99,  count: 50, totalNumbers: 100, startNumber: 0 },
+  duplasena:  { min: 1,  max: 50,  count: 6,  totalNumbers: 50,  startNumber: 1 },
+  timemania:  { min: 1,  max: 80,  count: 10, totalNumbers: 80,  startNumber: 1 },
+  diadesorte: { min: 1,  max: 31,  count: 7,  totalNumbers: 31,  startNumber: 1 },
+  supersete:  { min: 0,  max: 9,   count: 7,  totalNumbers: 10,  startNumber: 0 },
 };
 
 // ── Tool definitions para o Claude ───────────────────────────────────────────
@@ -196,7 +196,7 @@ async function toolAnalyzeFrequency(lotteryId: string, limit = 30): Promise<obje
       return { success: false, error: "Sem dados disponíveis no momento" };
     }
 
-    const frequencies = computeFrequencies(rules.totalNumbers, draws);
+    const frequencies = computeFrequencies(rules.totalNumbers, draws, rules.startNumber);
     const sorted = [...frequencies].sort((a, b) => b.frequency - a.frequency);
 
     return {
@@ -494,7 +494,7 @@ router.get("/data/:lotteryId", async (req: Request, res: Response) => {
       return;
     }
 
-    const frequencies = computeFrequencies(rules.totalNumbers, draws);
+    const frequencies = computeFrequencies(rules.totalNumbers, draws, rules.startNumber);
     const sorted = [...frequencies].sort((a, b) => b.frequency - a.frequency);
 
     const sums = draws.map(d => d.reduce((a, b) => a + b, 0));

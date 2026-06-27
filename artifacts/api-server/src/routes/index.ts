@@ -62,6 +62,7 @@ router.get("/lottery/analyze/:type", async (req: Request, res: Response) => {
     const type = req.params.type as string;
     const lottery = LOTTERIES.find(l => l.id === type);
     const totalNumbers = lottery?.totalNumbers || 60;
+    const startNumber  = lottery?.startNumber ?? 1;
 
     const draws = await fetchHistoricalDraws(type, 30);
     if (draws.length === 0) {
@@ -71,7 +72,7 @@ router.get("/lottery/analyze/:type", async (req: Request, res: Response) => {
       }); return;
     }
 
-    const freqs = computeFrequencies(totalNumbers, draws);
+    const freqs = computeFrequencies(totalNumbers, draws, startNumber);
     const sorted = [...freqs].sort((a, b) => b.frequency - a.frequency);
     const hotCut  = Math.floor(sorted.length * 0.25);
     const coldCut = Math.floor(sorted.length * 0.75);
@@ -81,7 +82,7 @@ router.get("/lottery/analyze/:type", async (req: Request, res: Response) => {
     const coldNumbers = sorted.slice(coldCut).map(f => f.number);
 
     const delayMap: Record<number, number> = {};
-    for (let n = 1; n <= totalNumbers; n++) {
+    for (let n = startNumber; n < startNumber + totalNumbers; n++) {
       let delay = draws.length;
       for (let i = 0; i < draws.length; i++) {
         if (draws[i].includes(n)) { delay = i; break; }

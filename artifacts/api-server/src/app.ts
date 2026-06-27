@@ -117,7 +117,7 @@ app.use("/api/admin",        adminRouter);
 
 // ── Meta-reasoning routes (alias for AIMetrics page) ─────────
 function buildCtx(lotteryId: string, lottery: any, draws: number[][]): LotteryContext {
-  const freqs = computeFrequencies(lottery.totalNumbers, draws);
+  const freqs = computeFrequencies(lottery.totalNumbers, draws, lottery.startNumber ?? 1);
   const sorted = [...freqs].sort((a, b) => b.frequency - a.frequency);
   const hotCut  = Math.floor(sorted.length * 0.25);
   const coldCut = Math.floor(sorted.length * 0.75);

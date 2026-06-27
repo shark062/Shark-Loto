@@ -62,7 +62,7 @@ async function handleLotteryCommand(message: string): Promise<{ handled: boolean
     if (!lottery) return { handled: false };
     const count = genMatch ? Math.min(parseInt(genMatch[1]) || 1, 5) : 1;
     const draws = await fetchHistoricalDraws(detectedLotteryId, 20).catch(() => [] as number[][]);
-    const freqs = computeFrequencies(lottery.totalNumbers, draws);
+    const freqs = computeFrequencies(lottery.totalNumbers, draws, lottery.startNumber ?? 1);
     const games = Array.from({ length: count }, () =>
       generateSmartNumbers(freqs, lottery.minNumbers, "mixed", lottery.totalNumbers)
     );
@@ -84,7 +84,7 @@ async function handleLotteryCommand(message: string): Promise<{ handled: boolean
     const lottery = LOTTERIES.find(l => l.id === detectedLotteryId);
     if (!lottery) return { handled: false };
     const draws = await fetchHistoricalDraws(detectedLotteryId, 20).catch(() => [] as number[][]);
-    const frequencies = computeFrequencies(lottery.totalNumbers, draws);
+    const frequencies = computeFrequencies(lottery.totalNumbers, draws, lottery.startNumber ?? 1);
     return {
       handled: true,
       response: {
@@ -108,7 +108,7 @@ async function handleLotteryCommand(message: string): Promise<{ handled: boolean
     const lottery = LOTTERIES.find(l => l.id === detectedLotteryId);
     if (!lottery) return { handled: false };
     const draws = await fetchHistoricalDraws(detectedLotteryId, 20).catch(() => [] as number[][]);
-    const frequencies = computeFrequencies(lottery.totalNumbers, draws);
+    const frequencies = computeFrequencies(lottery.totalNumbers, draws, lottery.startNumber ?? 1);
     const sorted = [...frequencies].sort((a, b) => b.frequency - a.frequency);
     return {
       handled: true,
