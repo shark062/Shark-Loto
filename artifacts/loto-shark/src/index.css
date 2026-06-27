@@ -513,5 +513,4 @@ span[data-placeholder],
 [class*="rounded-3xl"],
 [class*="rounded-xl"] {
   --glass-bg: rgba(5, 5, 20, 0.50);
-                      }
-    
+}
