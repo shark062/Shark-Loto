@@ -55,11 +55,10 @@
 
 
 /* ── Glass card — padrão único para todos os cards ──
-   Nota: CSS variable impede o Lightning CSS de dropar backdrop-filter no build */
+   IMPORTANTE: valores diretos (não via var()) para o Lightning CSS não remover no build */
 .glass-card {
-  --glass-backdrop: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: var(--glass-backdrop) !important;
-  backdrop-filter: var(--glass-backdrop) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
 }
 
 * {
@@ -427,10 +426,20 @@ span[data-placeholder],
 
 /* Cards específicos da página Análises Inteligentes / Predições IA */
 .analysis-card {
-  background: rgba(255, 255, 255, 0.40) !important;
+  background: rgba(10, 15, 30, 0.82) !important;
   -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
   backdrop-filter: blur(20px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Tab buttons da página AIAnalysis */
+.tab-btn-glass {
+  -webkit-backdrop-filter: blur(14px) saturate(130%) !important;
+  backdrop-filter: blur(14px) saturate(130%) !important;
+}
+.tab-btn-glass-active {
+  -webkit-backdrop-filter: blur(14px) saturate(150%) !important;
+  backdrop-filter: blur(14px) saturate(150%) !important;
 }
 
 /* Override global min-height for number grid buttons (HeatMap, Generator cartela) */
@@ -504,4 +513,5 @@ span[data-placeholder],
 [class*="rounded-3xl"],
 [class*="rounded-xl"] {
   --glass-bg: rgba(5, 5, 20, 0.50);
-}
+                      }
+    
