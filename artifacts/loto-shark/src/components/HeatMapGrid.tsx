@@ -63,8 +63,8 @@ export default function HeatMapGrid({
         </CardHeader>
         <CardContent>
           <div
-            className="number-grid gap-1.5 mb-4"
-            style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+            className="number-grid gap-1.5 mb-4 mx-auto"
+            style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, maxWidth: `${cols * 52}px` }}
           >
             {[...Array(maxNumbers || 25)].map((_, i) => (
               <div
@@ -89,8 +89,13 @@ export default function HeatMapGrid({
       <CardContent>
         {/* Numbers Grid */}
         <div
-          className="number-grid mb-6"
-          style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: '6px' }}
+          className="number-grid mb-6 mx-auto"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            gap: '6px',
+            maxWidth: `${cols * 52}px`,
+          }}
         >
           {Array.from({ length: maxNumbers }, (_, i) => {
             const number = i + 1;
