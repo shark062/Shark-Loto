@@ -1,55 +1,24 @@
 services:
-  # ── API Server (Node.js) ─────────────────────────────────────────────────────
-  - type: web
-    name: loto-shark-api
-    runtime: node
-    rootDir: .
-    buildCommand: pnpm install && pnpm --filter @workspace/api-server run build
-    startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
-    healthCheckPath: /api/health
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NODE_VERSION
-        value: "24"
-      # Banco de dados Neon — configure no dashboard Render com sua URL real
-      - key: NEON_DATABASE_URL
-        sync: false
-      # Chaves de API — configure no dashboard Render OU use o painel /admin
-      # Os nomes abaixo são os nomes padrão esperados pelo servidor
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: GOOGLE_API_KEY
-        sync: false
-      - key: GROQ_API_KEY
-        sync: false
-      - key: DEEPSEEK_API_KEY
-        sync: false
-      - key: OPENROUTER_API_KEY
-        sync: false
-      - key: MISTRAL_API_KEY
-        sync: false
-      - key: COHERE_API_KEY
-        sync: false
-
-  # ── Frontend (React/Vite estático) ──────────────────────────────────────────
+  # Frontend estático
   - type: web
     name: loto-shark-frontend
     runtime: static
-    rootDir: .
-    buildCommand: pnpm install && pnpm --filter @workspace/loto-shark run build
-    staticPublishPath: ./artifacts/loto-shark/dist/public
-    envVars:
-      - key: NODE_VERSION
-        value: "24"
-      # URL da API — OBRIGATÓRIO: aponte para o serviço loto-shark-api no Render
-      # Exemplo: https://loto-shark-api.onrender.com
-      - key: VITE_API_BASE_URL
-        sync: false
+    buildCommand: cd artifacts/loto-shark && npm install --legacy-peer-deps && npm run build
+    staticPublishPath: artifacts/loto-shark/dist/public
+    pullRequestPreviewsEnabled: false
     routes:
-      # Todas as rotas do SPA voltam ao index.html
       - type: rewrite
         source: /*
         destination: /index.html
+
+  # API backend
+  - type: web
+    name: loto-shark-api
+    runtime: node
+    buildCommand: cd artifacts/api-server && npm install --legacy-peer-deps && npm run build
+    startCommand: node artifacts/api-server/dist/index.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
