@@ -17,7 +17,7 @@ export function NeonCard({ children, className, glowColor = "none" }: NeonCardPr
 
   return (
     <div className={cn(
-      "bg-white/[0.05] backdrop-blur-md border border-white/10 rounded-2xl p-6 relative overflow-hidden group transition-all duration-300",
+      "glass-card border border-white/10 rounded-2xl p-6 relative overflow-hidden group transition-all duration-300",
       glows[glowColor],
       className
     )}>

@@ -70,7 +70,7 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-md animate-pulse p-6">
+      <div className="glass-card rounded-2xl border border-white/10 animate-pulse p-6">
         <div className="flex flex-col items-center gap-3">
           <div className="w-16 h-16 bg-muted/20 rounded-full" />
           <div className="h-5 bg-muted/20 rounded w-32" />
@@ -95,7 +95,7 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
 
   return (
     <div
-      className={`rounded-2xl border ${isLive ? "border-red-500/60 shadow-red-500/10 shadow-lg" : cfg.borderColor} bg-white/[0.06] backdrop-blur-md hover:bg-white/[0.09] transition-all duration-200 hover:shadow-xl ${cfg.accentGlow}`}
+      className={`glass-card rounded-2xl border ${isLive ? "border-red-500/60 shadow-red-500/10 shadow-lg" : cfg.borderColor} transition-all duration-200 hover:shadow-xl ${cfg.accentGlow}`}
       data-testid={`lottery-card-${lottery.id}`}
     >
       <div className="px-5 pt-6 pb-4 flex flex-col items-center text-center gap-1.5">
@@ -202,7 +202,7 @@ export default function AllLotteriesCard() {
         </CardHeader>
         <CardContent className="p-4 pt-0 space-y-3">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-md animate-pulse p-6">
+            <div key={i} className="glass-card rounded-2xl border border-white/10 animate-pulse p-6">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-14 h-14 bg-muted/20 rounded-full" />
                 <div className="h-5 bg-muted/20 rounded w-32" />
