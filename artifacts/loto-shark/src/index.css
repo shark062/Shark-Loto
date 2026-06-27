@@ -58,10 +58,10 @@
    Nota: CSS variable impede o Lightning CSS de dropar backdrop-filter no build */
 .glass-card {
   --glass-backdrop: blur(20px);
-  background: rgba(255, 255, 255, 0.06) !important;
-  -webkit-backdrop-filter: var(--glass-backdrop) !important;
-  backdrop-filter: var(--glass-backdrop) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 * {
@@ -316,6 +316,7 @@ select,
   border-radius: 12px !important;
 }
 
+/* Placeholder visível nos selects e dropdowns */
 [data-placeholder],
 [data-placeholder] span,
 [data-placeholder] > span,
@@ -339,6 +340,7 @@ span[data-placeholder],
   border-radius: 12px !important;
 }
 
+/* Classe utilitária de vidro fosco para uso direto nos componentes */
 .glass-panel {
   background: rgba(255, 255, 255, 0.05) !important;
   backdrop-filter: blur(12px) !important;

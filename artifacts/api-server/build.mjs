@@ -1,12 +1,40 @@
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { build as esbuild } from "esbuild";
-import esbuildPluginPino from "esbuild-plugin-pino";
 import { rm } from "node:fs/promises";
+import { execSync } from "node:child_process";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const workspaceRoot = path.resolve(__dirname, "..", "..");
+
+/**
+ * Resolve a build-time dependency trying multiple locations:
+ *  1. artifacts/api-server/node_modules  (pnpm isolated linker)
+ *  2. <workspace-root>/node_modules      (pnpm hoisted linker)
+ * If neither works, install locally via npm as a last resort.
+ */
+function requireBuildDep(name) {
+  const bases = [
+    path.join(__dirname, "package.json"),
+    path.join(workspaceRoot, "package.json"),
+  ];
+  for (const base of bases) {
+    try { return createRequire(base)(name); } catch {}
+  }
+  console.log(`[build] "${name}" not found — installing locally via npm...`);
+  execSync(
+    `npm install --no-save --no-package-lock esbuild@0.27.3 "esbuild-plugin-pino@^2.3.3"`,
+    { stdio: "inherit", cwd: __dirname },
+  );
+  return createRequire(path.join(__dirname, "package.json"))(name);
+}
+
+const { build: esbuild } = requireBuildDep("esbuild");
+const esbuildPluginPino = requireBuildDep("esbuild-plugin-pino");
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
-globalThis.require = createRequire(import.meta.url);
+globalThis.require = createRequire(path.join(__dirname, "package.json"));
 
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 

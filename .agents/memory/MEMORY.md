@@ -1,0 +1,2 @@
+- [Loto-Shark workflows](loto-shark-workflows.md) — Preview funciona na porta 5000 via workflow "Start application"; artifacts usam porta 23571. Ambos precisam rodar juntos.
+- [PIX payload CRC16](loto-shark-pix.md) — Payload PIX deve ter CRC16-CCITT recalculado a cada mudança de nome/dados.
