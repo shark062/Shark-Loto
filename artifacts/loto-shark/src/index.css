@@ -427,6 +427,14 @@ span[data-placeholder],
   }
 }
 
+/* Cards específicos da página Análises Inteligentes / Predições IA */
+.analysis-card {
+  background: rgba(10, 15, 30, 0.72) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(130%) !important;
+  backdrop-filter: blur(24px) saturate(130%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
 /* Override global min-height for number grid buttons (HeatMap, Generator cartela) */
 .number-grid button {
   min-height: unset !important;
