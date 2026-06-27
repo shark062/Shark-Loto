@@ -89,6 +89,22 @@ const CARD_STYLE: React.CSSProperties = {
   border: "1px solid rgba(255, 255, 255, 0.12)",
 };
 
+const TAB_ACTIVE_STYLE: React.CSSProperties = {
+  background: "rgba(80, 40, 160, 0.72)",
+  backdropFilter: "blur(16px) saturate(140%)",
+  WebkitBackdropFilter: "blur(16px) saturate(140%)",
+  border: "1px solid rgba(139, 92, 246, 0.6)",
+  color: "#ffffff",
+};
+
+const TAB_INACTIVE_STYLE: React.CSSProperties = {
+  background: "rgba(10, 10, 30, 0.65)",
+  backdropFilter: "blur(16px) saturate(130%)",
+  WebkitBackdropFilter: "blur(16px) saturate(130%)",
+  border: "1px solid rgba(255, 255, 255, 0.18)",
+  color: "#ffffff",
+};
+
 export default function AIAnalysis() {
   const [, setLocation] = useLocation();
   const [selectedLottery, setSelectedLottery] = useState<string>('');
@@ -298,7 +314,8 @@ export default function AIAnalysis() {
                     handleLoadRealPrediction();
                   }
                 }}
-                className={activeTab === tab ? "neon-border bg-primary/30 backdrop-blur-md text-white border-primary" : "neon-border bg-black/20 backdrop-blur-md text-white hover:bg-primary/20"}
+                className="neon-border"
+                style={activeTab === tab ? TAB_ACTIVE_STYLE : TAB_INACTIVE_STYLE}
                 data-testid={`tab-${tab}`}
               >
                 {tab === 'pattern' && <Eye className="h-4 w-4 mr-2" />}
