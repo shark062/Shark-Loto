@@ -1,44 +1,61 @@
-# [Project name]
+# Loto-Shark
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Plataforma brasileira de análise de loterias com design cyberpunk, previsões por ensemble de IA, dados reais da API da Caixa Econômica Federal e persistência em PostgreSQL.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `PORT=8080 pnpm --filter @workspace/api-server run dev` — API server (porta 8080)
+- `PORT=23571 BASE_PATH=/ pnpm --filter @workspace/loto-shark run dev` — Frontend Vite (porta 23571)
+- `pnpm run typecheck` — typecheck completo em todos os pacotes
+- `pnpm run build` — typecheck + build de todos os pacotes
+- `pnpm --filter @workspace/db run push` — aplica schema no banco (apenas dev)
+- Required env: `DATABASE_URL` — PostgreSQL connection string
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
+- Frontend: React 18 + Vite 7 + TailwindCSS 4 + Framer Motion
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
+- Validação: Zod (`zod/v4`), `drizzle-zod`
+- IA: OpenAI, Anthropic, Gemini, Groq, DeepSeek, OpenRouter, Mistral, Cohere
 - Build: esbuild (CJS bundle)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/loto-shark/` — Frontend React (20 páginas, componentes, hooks)
+- `artifacts/loto-shark/src/index.css` — Tema cyberpunk completo (neon vars, glass-card, etc.)
+- `artifacts/loto-shark/public/` — Assets estáticos: 100 SVGs dezenas, bg-futurista.png, logos
+- `artifacts/api-server/src/` — Backend Express (app.ts, 9 rotas, 3 engines de IA, 5 libs)
+- `artifacts/api-server/src/engines/` — EnsembleEngine, AdaptiveEngine, FibonacciEngine
+- `lib/db/src/schema/index.ts` — Schema Drizzle (user_games, ai_providers, app_settings)
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Proxy path-based**: Frontend em `/` (porta 23571), API em `/api` (porta 8080) — roteado pelo proxy Replit
+- **runMigrations()**: Cria tabelas via `CREATE TABLE IF NOT EXISTS` no startup (sem drizzle-kit em prod)
+- **8 AI providers**: Registrados automaticamente no banco no startup do API server
+- **Env vars no workflow**: PORT e BASE_PATH injetados no comando do workflow (não via artifact.toml em dev)
+- **glass-card via CSS variable**: `--glass-backdrop: blur(20px)` evita que Lightning CSS descarte `backdrop-filter`
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Dashboard com todas as 8 modalidades da Caixa (Mega-Sena, Lotofácil, Quina, etc.)
+- Gerador de jogos com análise estatística e IA ensemble
+- Mapa de calor de frequência de dezenas
+- Histórico de resultados e análise de padrões
+- Previsões por múltiplos modelos de IA com votação por ensemble
+- Carrinho de jogos com exportação PDF
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Responder sempre em português (pt-BR)
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- O workflow deve incluir `PORT=23571 BASE_PATH=/` para o frontend e `PORT=8080` para a API
+- `pnpm run dev` na raiz do workspace não funciona — use `--filter` com o pacote específico
+- O Service Worker (sw.js) não funciona atrás do proxy Replit em dev — é esperado e não afeta o app
 
 ## Pointers
 
