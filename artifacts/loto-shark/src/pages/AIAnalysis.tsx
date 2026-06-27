@@ -84,23 +84,17 @@ interface GameResult {
 
 const CARD_STYLE: React.CSSProperties = {
   background: "rgba(10, 15, 30, 0.82)",
-  backdropFilter: "blur(24px) saturate(130%)",
-  WebkitBackdropFilter: "blur(24px) saturate(130%)",
   border: "1px solid rgba(255, 255, 255, 0.12)",
 };
 
 const TAB_ACTIVE_STYLE: React.CSSProperties = {
   background: "rgba(60, 20, 120, 0.75)",
-  backdropFilter: "blur(14px) saturate(150%)",
-  WebkitBackdropFilter: "blur(14px) saturate(150%)",
   border: "1px solid rgba(139, 92, 246, 0.55)",
   color: "#ffffff",
 };
 
 const TAB_INACTIVE_STYLE: React.CSSProperties = {
   background: "rgba(12, 14, 40, 0.62)",
-  backdropFilter: "blur(14px) saturate(130%)",
-  WebkitBackdropFilter: "blur(14px) saturate(130%)",
   border: "1px solid rgba(255, 255, 255, 0.13)",
   color: "#ffffff",
 };
@@ -314,7 +308,7 @@ export default function AIAnalysis() {
                     handleLoadRealPrediction();
                   }
                 }}
-                className="neon-border"
+                className={`neon-border ${activeTab === tab ? 'tab-btn-glass-active' : 'tab-btn-glass'}`}
                 style={activeTab === tab ? TAB_ACTIVE_STYLE : TAB_INACTIVE_STYLE}
                 data-testid={`tab-${tab}`}
               >
