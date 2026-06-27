@@ -90,18 +90,18 @@ const CARD_STYLE: React.CSSProperties = {
 };
 
 const TAB_ACTIVE_STYLE: React.CSSProperties = {
-  background: "rgba(80, 40, 160, 0.72)",
-  backdropFilter: "blur(16px) saturate(140%)",
-  WebkitBackdropFilter: "blur(16px) saturate(140%)",
-  border: "1px solid rgba(139, 92, 246, 0.6)",
+  background: "rgba(60, 20, 120, 0.75)",
+  backdropFilter: "blur(14px) saturate(150%)",
+  WebkitBackdropFilter: "blur(14px) saturate(150%)",
+  border: "1px solid rgba(139, 92, 246, 0.55)",
   color: "#ffffff",
 };
 
 const TAB_INACTIVE_STYLE: React.CSSProperties = {
-  background: "rgba(10, 10, 30, 0.65)",
-  backdropFilter: "blur(16px) saturate(130%)",
-  WebkitBackdropFilter: "blur(16px) saturate(130%)",
-  border: "1px solid rgba(255, 255, 255, 0.18)",
+  background: "rgba(12, 14, 40, 0.62)",
+  backdropFilter: "blur(14px) saturate(130%)",
+  WebkitBackdropFilter: "blur(14px) saturate(130%)",
+  border: "1px solid rgba(255, 255, 255, 0.13)",
   color: "#ffffff",
 };
 
@@ -307,7 +307,7 @@ export default function AIAnalysis() {
             {(['pattern', 'prediction', 'strategy', 'real-prediction', 'mcp'] as const).map((tab) => (
               <Button
                 key={tab}
-                variant={activeTab === tab ? "default" : "outline"}
+                variant="ghost"
                 onClick={() => {
                   setActiveTab(tab);
                   if (tab === 'real-prediction' && selectedLottery && !realPrediction) {
