@@ -65,15 +65,26 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
 };
 
 export function getLotteryConfig(lotteryId: string, totalNumbers: number, minNumbers: number): LotteryConfig {
-  return LOTTERY_CONFIGS[lotteryId] ?? {
-    id: lotteryId, totalNumbers, minNumbers,
-    sumMin: Math.floor((totalNumbers + 1) * minNumbers / 2 * 0.6),
-    sumMax: Math.floor((totalNumbers + 1) * minNumbers / 2 * 1.4),
-    sumIdeal: Math.floor((totalNumbers + 1) * minNumbers / 2),
-    evenMin: Math.floor(minNumbers * 0.3),
-    evenMax: Math.ceil(minNumbers * 0.7),
-    maxSeqLength: Math.ceil(minNumbers * 0.35),
-    groups: Math.min(10, Math.ceil(totalNumbers / 10)),
+  const base = LOTTERY_CONFIGS[lotteryId];
+
+  // Se a loteria é conhecida E o minNumbers bate com o padrão, usa config fixo
+  if (base && base.minNumbers === minNumbers) return base;
+
+  // minNumbers personalizado (usuário pediu mais dezenas) ou loteria desconhecida
+  // Gera config dinâmica proporcional ao minNumbers real
+  const density = minNumbers / totalNumbers;
+  const maxSeqFactor = density > 0.70 ? 0.85 : density > 0.50 ? 0.70 : density > 0.30 ? 0.50 : 0.38;
+  return {
+    id: lotteryId,
+    totalNumbers,
+    minNumbers,
+    sumMin:       Math.floor((totalNumbers + 1) * minNumbers / 2 * 0.6),
+    sumMax:       Math.floor((totalNumbers + 1) * minNumbers / 2 * 1.4),
+    sumIdeal:     Math.floor((totalNumbers + 1) * minNumbers / 2),
+    evenMin:      Math.floor(minNumbers * 0.3),
+    evenMax:      Math.ceil(minNumbers * 0.7),
+    maxSeqLength: Math.ceil(minNumbers * maxSeqFactor),
+    groups:       base?.groups ?? Math.min(10, Math.ceil(totalNumbers / 10)),
   };
 }
 

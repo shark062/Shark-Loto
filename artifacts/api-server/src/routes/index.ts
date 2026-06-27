@@ -417,7 +417,8 @@ router.post("/games/generate", async (req: Request, res: Response) => {
   const { lotteryId = 'megasena', numbersCount, gamesCount = 1, strategy = 'mixed' } = req.body;
 
   const lottery = LOTTERIES.find(l => l.id === lotteryId) || LOTTERIES[0];
-  const qty   = Math.min(Math.max(numbersCount || lottery.minNumbers, lottery.minNumbers), lottery.totalNumbers);
+  // Limita dezenas: mínimo da modalidade até totalNumbers-1 (totalNumbers não faz sentido como jogo)
+  const qty   = Math.min(Math.max(numbersCount || lottery.minNumbers, lottery.minNumbers), lottery.totalNumbers - 1);
   const count = Math.min(Math.max(gamesCount, 1), 100);
 
   try {
@@ -446,6 +447,11 @@ router.post("/games/generate", async (req: Request, res: Response) => {
     const { jogos, contexto } = strategy === 'avancado'
       ? gerarJogosAvancado(draws, count, lottery.totalNumbers, qty, lotteryId)
       : gerarJogosMaster(draws, count, lottery.totalNumbers, qty, pesosFinais, lotteryId);
+
+    if (jogos.length === 0) {
+      res.status(422).json({ message: `Não foi possível gerar jogos válidos com ${qty} dezenas para ${lottery.displayName}. Tente um número menor de dezenas.` });
+      return;
+    }
 
     const insertValues = jogos.map(result => ({
       lotteryId,

@@ -93,6 +93,20 @@ function dedup(jogo: number[]): number[] {
   return [...new Set(jogo)];
 }
 
+// Garante exatamente minNumbers dezenas — preenche com números restantes se faltar
+function completar(jogo: number[], totalNumbers: number, minNumbers: number): number[] {
+  const set = new Set(jogo);
+  if (set.size >= minNumbers) return [...set].sort((a, b) => a - b).slice(0, minNumbers);
+  const resto = shuffle(
+    Array.from({ length: totalNumbers }, (_, i) => i + 1).filter(n => !set.has(n))
+  );
+  for (const n of resto) {
+    set.add(n);
+    if (set.size >= minNumbers) break;
+  }
+  return [...set].sort((a, b) => a - b).slice(0, minNumbers);
+}
+
 // ============================================================
 //  Contexto básico quente/fria/morna (compatibilidade v2)
 // ============================================================
@@ -160,7 +174,9 @@ function validarJogo(jogo: number[], totalNumbers: number, minNumbers: number): 
   if (jogo.some(n => n < 1 || n > totalNumbers)) return false;
 
   const density = minNumbers / totalNumbers;
-  const parFactor = density > 0.45 ? 0.12 : 0.25;
+
+  // Para loterias muito densas (ex: 20/25 = 0.80), verificação de paridade é mais flexível
+  const parFactor = density > 0.60 ? 0.08 : density > 0.45 ? 0.12 : 0.25;
   const minPares  = Math.floor(minNumbers * parFactor);
   const maxPares  = minNumbers - minPares;
   const pares     = jogo.filter(n => n % 2 === 0).length;
@@ -173,7 +189,8 @@ function validarJogo(jogo: number[], totalNumbers: number, minNumbers: number): 
     else seq = 1;
   }
 
-  const seqFactor = density > 0.50 ? 0.65 : density > 0.30 ? 0.50 : 0.38;
+  // Para loterias muito densas, sequências longas são naturais e não devem ser penalizadas
+  const seqFactor = density > 0.70 ? 0.90 : density > 0.50 ? 0.75 : density > 0.30 ? 0.50 : 0.38;
   if (maxSeq > Math.ceil(minNumbers * seqFactor)) return false;
 
   return true;
@@ -216,23 +233,26 @@ function scoreCompleto(jogo: number[], ctx: SharkContext, pesos: SharkPesos = PE
 // ============================================================
 
 function gerarImpulso(ctx: SharkContext): number[] {
-  const { hot, cold, warm, minNumbers } = ctx;
+  const { hot, cold, warm, minNumbers, totalNumbers } = ctx;
   const hotQ  = Math.ceil(minNumbers * 0.50);
   const coldQ = Math.ceil(minNumbers * 0.25);
-  return dedup([...pick(hot, hotQ), ...pick(cold, coldQ), ...pick(warm, minNumbers - hotQ - coldQ)]).slice(0, minNumbers);
+  const base = dedup([...pick(hot, hotQ), ...pick(cold, coldQ), ...pick(warm, minNumbers - hotQ - coldQ)]);
+  return completar(base, totalNumbers, minNumbers);
 }
 
 function gerarCompensacao(ctx: SharkContext): number[] {
-  const { hot, cold, warm, minNumbers } = ctx;
+  const { hot, cold, warm, minNumbers, totalNumbers } = ctx;
   const coldQ = Math.ceil(minNumbers * 0.50);
   const hotQ  = Math.ceil(minNumbers * 0.25);
-  return dedup([...pick(cold, coldQ), ...pick(hot, hotQ), ...pick(warm, minNumbers - coldQ - hotQ)]).slice(0, minNumbers);
+  const base = dedup([...pick(cold, coldQ), ...pick(hot, hotQ), ...pick(warm, minNumbers - coldQ - hotQ)]);
+  return completar(base, totalNumbers, minNumbers);
 }
 
 function gerarVariacaoPura(ctx: SharkContext): number[] {
-  const { hot, cold, warm, minNumbers } = ctx;
+  const { hot, cold, warm, minNumbers, totalNumbers } = ctx;
   const terco = Math.floor(minNumbers / 3);
-  return dedup([...pick(hot, terco), ...pick(cold, terco), ...pick(warm, minNumbers - terco * 2)]).slice(0, minNumbers);
+  const base = dedup([...pick(hot, terco), ...pick(cold, terco), ...pick(warm, minNumbers - terco * 2)]);
+  return completar(base, totalNumbers, minNumbers);
 }
 
 function gerarPorPeso(ctx: SharkContext, pesos: SharkPesos = PESOS_PADRAO): number[] {
@@ -241,7 +261,10 @@ function gerarPorPeso(ctx: SharkContext, pesos: SharkPesos = PESOS_PADRAO): numb
   const ranked = nums
     .map(n => ({ n, peso: (recentFrequency[n] || 0) * pesos.frequencia * 15 + (delay[n] || 0) * pesos.atraso * 8 }))
     .sort((a, b) => b.peso - a.peso);
-  return pick(ranked.slice(0, Math.floor(totalNumbers * 0.5)).map(p => p.n), minNumbers);
+  // Expande pool para garantir cobertura suficiente quando minNumbers é grande
+  const poolFrac = Math.max(0.5, minNumbers / totalNumbers + 0.2);
+  const base = pick(ranked.slice(0, Math.floor(totalNumbers * poolFrac)).map(p => p.n), minNumbers);
+  return completar(base, totalNumbers, minNumbers);
 }
 
 function gerarRepInteligente(ctx: SharkContext): number[] {
@@ -253,7 +276,8 @@ function gerarRepInteligente(ctx: SharkContext): number[] {
   const friasEsc  = pick(frias, friaQ);
   const todos     = Array.from({ length: totalNumbers }, (_, i) => i + 1);
   const novos     = pick(todos.filter(n => !repetidos.includes(n) && !friasEsc.includes(n)), minNumbers - repetidos.length - friasEsc.length);
-  return dedup([...repetidos, ...friasEsc, ...novos]).slice(0, minNumbers);
+  const base = dedup([...repetidos, ...friasEsc, ...novos]);
+  return completar(base, totalNumbers, minNumbers);
 }
 
 function gerarRepBaixa(ctx: SharkContext): number[] {
@@ -268,7 +292,8 @@ function gerarRepBaixa(ctx: SharkContext): number[] {
   const fEsc      = pick(frias,   coldQ);
   const todos     = Array.from({ length: totalNumbers }, (_, i) => i + 1);
   const novos     = pick(todos.filter(n => !repetidos.includes(n) && !qEsc.includes(n) && !fEsc.includes(n)), minNumbers - repetidos.length - qEsc.length - fEsc.length);
-  return dedup([...repetidos, ...qEsc, ...fEsc, ...novos]).slice(0, minNumbers);
+  const base = dedup([...repetidos, ...qEsc, ...fEsc, ...novos]);
+  return completar(base, totalNumbers, minNumbers);
 }
 
 // ============================================================

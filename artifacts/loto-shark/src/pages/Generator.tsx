@@ -154,22 +154,14 @@ export default function Generator() {
   }, [selectedLotteryId]);
 
 
-  // Limpar campo dezenas quando trocar de modalidade
-  useEffect(() => {
-    if (selectedLotteryId) {
-      form.setValue('numbersCount', undefined as any);
-    }
-  }, [selectedLotteryId]);
-
   const selectedLottery = lotteryTypes?.find(l => l.id === selectedLotteryId);
 
-  // Não preenche automaticamente - deixa em branco para o usuário escolher
+  // Preenche automaticamente dezenas com o mínimo da modalidade ao trocar
   useEffect(() => {
     if (selectedLottery) {
-      // Remove o preenchimento automático
-      // form.setValue('numbersCount', selectedLottery.minNumbers);
+      form.setValue('numbersCount', selectedLottery.minNumbers);
     }
-  }, [selectedLottery]);
+  }, [selectedLottery?.id]);
 
   // Generate games mutation
   const generateGamesMutation = useMutation({
@@ -411,30 +403,44 @@ export default function Generator() {
                       <Label className="flex items-center text-sm font-medium text-foreground mb-2">
                         <Dice6 className="h-4 w-4 mr-2 text-accent" />
                         Dezenas
+                        {selectedLottery && (
+                          <span className="ml-2 text-xs text-muted-foreground font-normal">
+                            (mín. {selectedLottery.minNumbers} — máx. {selectedLottery.totalNumbers})
+                          </span>
+                        )}
                       </Label>
                       <Input
                         type="number"
-                        placeholder=""
+                        placeholder={selectedLottery ? `Mín. ${selectedLottery.minNumbers}` : "Dezenas"}
+                        min={selectedLottery?.minNumbers ?? 1}
+                        max={selectedLottery?.totalNumbers ?? 60}
                         {...form.register('numbersCount', { valueAsNumber: true })}
                         className="bg-input border-border"
                         data-testid="numbers-count-input"
                       />
+                      {form.formState.errors.numbersCount && (
+                        <p className="text-destructive text-xs mt-1">{form.formState.errors.numbersCount.message}</p>
+                      )}
                     </div>
 
                     <div>
                       <Label className="flex items-center text-sm font-medium text-foreground mb-2">
                         <Copy className="h-4 w-4 mr-2 text-secondary" />
                         Qtd. Jogos
+                        <span className="ml-2 text-xs text-muted-foreground font-normal">(máx. 100)</span>
                       </Label>
                       <Input
                         type="number"
-                        placeholder="Máx. 100"
+                        placeholder="Ex: 5"
                         min={1}
                         max={100}
                         {...form.register('gamesCount', { valueAsNumber: true })}
                         className="bg-input border-border"
                         data-testid="games-count-input"
                       />
+                      {form.formState.errors.gamesCount && (
+                        <p className="text-destructive text-xs mt-1">{form.formState.errors.gamesCount.message}</p>
+                      )}
                     </div>
                   </div>
                 )}
