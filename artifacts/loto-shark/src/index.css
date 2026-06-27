@@ -57,11 +57,11 @@
 /* ── Glass card — padrão único para todos os cards ──
    Nota: CSS variable impede o Lightning CSS de dropar backdrop-filter no build */
 .glass-card {
-  --glass-backdrop: blur(20px);
-  background: rgba(255, 255, 255, 0.06);
-  -webkit-backdrop-filter: var(--glass-backdrop);
-  backdrop-filter: var(--glass-backdrop);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  --glass-backdrop: blur(22px) saturate(130%);
+  background: rgba(8, 10, 28, 0.68) !important;
+  -webkit-backdrop-filter: var(--glass-backdrop) !important;
+  backdrop-filter: var(--glass-backdrop) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 * {
@@ -429,9 +429,9 @@ span[data-placeholder],
 
 /* Cards específicos da página Análises Inteligentes / Predições IA */
 .analysis-card {
-  background: rgba(10, 15, 30, 0.72) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(130%) !important;
-  backdrop-filter: blur(24px) saturate(130%) !important;
+  background: rgba(8, 10, 28, 0.68) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(130%) !important;
+  backdrop-filter: blur(22px) saturate(130%) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
