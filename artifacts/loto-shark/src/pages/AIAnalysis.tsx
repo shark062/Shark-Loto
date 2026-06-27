@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
@@ -81,6 +81,13 @@ interface GameResult {
   matches: number;
   createdAt: string;
 }
+
+const CARD_STYLE: React.CSSProperties = {
+  background: "rgba(10, 15, 30, 0.82)",
+  backdropFilter: "blur(24px) saturate(130%)",
+  WebkitBackdropFilter: "blur(24px) saturate(130%)",
+  border: "1px solid rgba(255, 255, 255, 0.12)",
+};
 
 export default function AIAnalysis() {
   const [, setLocation] = useLocation();
@@ -234,7 +241,7 @@ export default function AIAnalysis() {
         </div>
 
         {/* AI Status Overview */}
-        <Card className="analysis-card">
+        <Card className="analysis-card" style={CARD_STYLE}>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 gap-4">
               <div className="flex flex-col items-center text-center">
@@ -309,7 +316,7 @@ export default function AIAnalysis() {
         <div className="space-y-6">
           {/* Pattern Analysis */}
           {activeTab === 'pattern' && (
-            <Card className="analysis-card">
+            <Card className="analysis-card" style={CARD_STYLE}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-primary flex items-center">
                   <Eye className="h-5 w-5 mr-2" />
@@ -339,7 +346,7 @@ export default function AIAnalysis() {
                 ) : patternAnalysis?.result?.patterns ? (
                   <div className="space-y-4">
                     {(patternAnalysis.result.patterns as PatternAnalysis[]).map((pattern, index) => (
-                      <Card key={index} className="analysis-card">
+                      <Card key={index} className="analysis-card" style={CARD_STYLE}>
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="font-semibold text-foreground">{pattern.pattern}</h4>
@@ -386,7 +393,7 @@ export default function AIAnalysis() {
 
           {/* Prediction Analysis */}
           {activeTab === 'prediction' && (
-            <Card className="analysis-card">
+            <Card className="analysis-card" style={CARD_STYLE}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-secondary flex items-center">
                   <Brain className="h-5 w-5 mr-2" />
@@ -419,7 +426,7 @@ export default function AIAnalysis() {
                 ) : predictionAnalysis?.result ? (
                   <div className="space-y-6">
                     {/* Primary Prediction */}
-                    <Card className="analysis-card">
+                    <Card className="analysis-card" style={CARD_STYLE}>
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between mb-4">
                           <h4 className="text-xl font-bold text-secondary flex items-center">
@@ -484,7 +491,7 @@ export default function AIAnalysis() {
                         <h5 className="text-lg font-semibold text-foreground mb-4">Alternativas</h5>
                         <div className="grid grid-cols-1 gap-4">
                           {predictionAnalysis.result.alternatives.slice(0, 4).map((alt: any, index: number) => (
-                            <Card key={index} className="analysis-card">
+                            <Card key={index} className="analysis-card" style={CARD_STYLE}>
                               <CardContent className="p-4">
                                 <div className="flex items-center justify-between mb-3">
                                   <h6 className="font-medium text-foreground">{alt.strategy}</h6>
@@ -522,7 +529,7 @@ export default function AIAnalysis() {
 
           {/* Strategy Analysis */}
           {activeTab === 'strategy' && (
-            <Card className="analysis-card">
+            <Card className="analysis-card" style={CARD_STYLE}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-accent flex items-center">
                   <Target className="h-5 w-5 mr-2" />
@@ -551,7 +558,7 @@ export default function AIAnalysis() {
                 ) : strategyAnalysis?.result ? (
                   <div className="space-y-6">
                     {/* Strategy Overview */}
-                    <Card className="analysis-card">
+                    <Card className="analysis-card" style={CARD_STYLE}>
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between mb-4">
                           <h4 className="text-xl font-bold text-accent flex items-center">
@@ -596,7 +603,7 @@ export default function AIAnalysis() {
 
                     {/* Additional Recommendations */}
                     <div className="grid grid-cols-1 gap-4">
-                      <Card className="analysis-card">
+                      <Card className="analysis-card" style={CARD_STYLE}>
                         <CardContent className="p-4">
                           <div className="flex items-center mb-3">
                             <Calendar className="h-5 w-5 mr-2 text-primary" />
@@ -608,7 +615,7 @@ export default function AIAnalysis() {
                         </CardContent>
                       </Card>
 
-                      <Card className="analysis-card">
+                      <Card className="analysis-card" style={CARD_STYLE}>
                         <CardContent className="p-4">
                           <div className="flex items-center mb-3">
                             <Calculator className="h-5 w-5 mr-2 text-neon-green" />
@@ -622,7 +629,7 @@ export default function AIAnalysis() {
                     </div>
 
                     {/* Expected Improvement */}
-                    <Card className="analysis-card">
+                    <Card className="analysis-card" style={CARD_STYLE}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
@@ -658,7 +665,7 @@ export default function AIAnalysis() {
 
           {/* Real Prediction */}
           {activeTab === 'real-prediction' && (
-            <Card className="analysis-card">
+            <Card className="analysis-card" style={CARD_STYLE}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-primary flex items-center">
                   <Sparkles className="h-5 w-5 mr-2" />
@@ -684,7 +691,7 @@ export default function AIAnalysis() {
                   </div>
                 ) : realPrediction ? (
                   <div className="space-y-6">
-                    <Card className="analysis-card">
+                    <Card className="analysis-card" style={CARD_STYLE}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between mb-4">
                           <h4 className="text-lg font-semibold text-primary">{realPrediction.lotteryName}</h4>
@@ -741,7 +748,7 @@ export default function AIAnalysis() {
           )}
           {/* MCP Analyzer */}
           {activeTab === 'mcp' && (
-            <Card className="analysis-card">
+            <Card className="analysis-card" style={CARD_STYLE}>
               <CardContent className="p-5">
                 <MCPAnalyzer />
               </CardContent>
