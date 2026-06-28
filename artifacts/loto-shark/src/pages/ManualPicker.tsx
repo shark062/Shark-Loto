@@ -240,9 +240,17 @@ export default function ManualPicker() {
               <CardContent>
                 {selectedLotteryData ? (
                   <>
-                    <div className="grid grid-cols-10 gap-2 mb-6">
+                    <div
+                      className="mb-6"
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${selectedLotteryData.totalNumbers <= 25 ? 5 : selectedLotteryData.totalNumbers <= 35 ? 7 : 10}, minmax(0, 1fr))`,
+                        gap: '8px',
+                      }}
+                    >
                       {Array.from({ length: selectedLotteryData.totalNumbers }, (_, i) => {
-                        const number = i + 1;
+                        const startNum = ['lotomania', 'supersete'].includes(selectedLotteryData.id) ? 0 : 1;
+                        const number = i + startNum;
                         const isSelected = selectedNumbers.includes(number);
 
                         return (

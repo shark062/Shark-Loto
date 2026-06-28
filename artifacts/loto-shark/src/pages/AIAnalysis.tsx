@@ -1,236 +1,24 @@
 import React, { useState } from "react";
 import { useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLotteryTypes, useUserStats } from "@/hooks/useLotteryData";
-import { apiFetch, apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Brain, 
-  TrendingUp, 
-  Target, 
-  Sparkles,
-  BarChart3,
-  Lightbulb,
-  RefreshCw,
-  Zap,
-  AlertCircle,
-  CheckCircle,
-  Activity,
-  Eye,
-  Calculator,
-  Calendar,
-  Trophy,
-  DollarSign,
-  Database
-} from "lucide-react";
-
-interface AIAnalysisResult {
-  id: number;
-  lotteryId: string;
-  analysisType: string;
-  result: any;
-  confidence: string;
-  createdAt: string;
-}
-
-interface PatternAnalysis {
-  pattern: string;
-  frequency: number;
-  lastOccurrence: string;
-  predictedNext: number[];
-}
-
-interface PredictionResult {
-  primaryPrediction: number[];
-  confidence: number;
-  reasoning: string;
-  alternatives: Array<{
-    numbers: number[];
-    strategy: string;
-  }>;
-  riskLevel: string;
-}
-
-interface StrategyRecommendation {
-  recommendedStrategy: string;
-  reasoning: string;
-  numberSelection: {
-    hotPercentage: number;
-    warmPercentage: number;
-    coldPercentage: number;
-  };
-  riskLevel: string;
-  playFrequency: string;
-  budgetAdvice: string;
-  expectedImprovement: string;
-}
-
-interface GameResult {
-  id: string;
-  lotteryId: string;
-  contestNumber: number;
-  numbersDrawn: number[];
-  prizeWon: string;
-  matches: number;
-  createdAt: string;
-}
+import { Brain, Target, BarChart3, Zap, Activity } from "lucide-react";
 
 const CARD_STYLE: React.CSSProperties = {
   background: "rgba(10, 15, 30, 0.82)",
   border: "1px solid rgba(255, 255, 255, 0.12)",
 };
 
-const TAB_ACTIVE_STYLE: React.CSSProperties = {
-  background: "rgba(60, 20, 120, 0.75)",
-  border: "1px solid rgba(139, 92, 246, 0.55)",
-  color: "#ffffff",
-};
-
-const TAB_INACTIVE_STYLE: React.CSSProperties = {
-  background: "rgba(12, 14, 40, 0.62)",
-  border: "1px solid rgba(255, 255, 255, 0.13)",
-  color: "#ffffff",
-};
-
 export default function AIAnalysis() {
   const [, setLocation] = useLocation();
   const [selectedLottery, setSelectedLottery] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'mcp'>('mcp');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [realPrediction, setRealPrediction] = useState<any>(null);
-  const [isLoadingRealPrediction, setIsLoadingRealPrediction] = useState(false);
-  const { toast } = useToast();
 
-  // Data queries
   const { data: lotteryTypes } = useLotteryTypes();
   const { data: userStats } = useUserStats();
-
-  // AI Analysis queries - sempre busca dados reais da API
-  const { data: patternAnalysis, isLoading: patternLoading, refetch: refetchPattern } = useQuery<AIAnalysisResult>({
-    queryKey: [`/api/ai/analysis/${selectedLottery}/pattern`],
-    queryFn: async () => {
-      const res = await apiFetch(`/api/ai/analysis/${selectedLottery}?type=pattern`);
-      if (!res.ok) throw new Error('Failed to fetch pattern analysis');
-      return res.json();
-    },
-    enabled: !!selectedLottery && activeTab === 'pattern',
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    refetchOnMount: true,
-  });
-
-  const { data: predictionAnalysis, isLoading: predictionLoading, refetch: refetchPrediction } = useQuery<AIAnalysisResult>({
-    queryKey: [`/api/ai/analysis/${selectedLottery}/prediction`],
-    queryFn: async () => {
-      const res = await apiFetch(`/api/ai/analysis/${selectedLottery}?type=prediction`);
-      if (!res.ok) throw new Error('Failed to fetch prediction analysis');
-      return res.json();
-    },
-    enabled: !!selectedLottery && activeTab === 'prediction',
-    staleTime: 2 * 60 * 1000,
-    refetchOnMount: true,
-  });
-
-  const { data: strategyAnalysis, isLoading: strategyLoading, refetch: refetchStrategy } = useQuery<AIAnalysisResult>({
-    queryKey: [`/api/ai/analysis/${selectedLottery}/strategy`],
-    queryFn: async () => {
-      const res = await apiFetch(`/api/ai/analysis/${selectedLottery}?type=strategy`);
-      if (!res.ok) throw new Error('Failed to fetch strategy analysis');
-      return res.json();
-    },
-    enabled: !!selectedLottery && activeTab === 'strategy',
-    staleTime: 2 * 60 * 1000,
-    refetchOnMount: true,
-  });
-
-  // Mock AI analysis data for demonstration purposes if needed
-  const aiAnalysis = predictionAnalysis?.result || patternAnalysis?.result || strategyAnalysis?.result;
-
-
-  // Generate new analysis mutation
-  const analyzeWithAI = useMutation({
-    mutationFn: async (analysisType: string) => {
-      const response = await apiRequest('POST', '/api/ai/analyze', {
-        lotteryId: selectedLottery,
-        analysisType,
-      });
-      return response.json();
-    },
-    onSuccess: (data, analysisType) => {
-      // Refetch the appropriate analysis
-      if (analysisType === 'pattern') refetchPattern();
-      else if (analysisType === 'prediction') refetchPrediction();
-      else if (analysisType === 'strategy') refetchStrategy();
-
-      toast({
-        title: "Análise Concluída",
-        description: "A IA terminou a análise com sucesso.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Erro na Análise",
-        description: "Não foi possível completar a análise. Tente novamente.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleAnalyze = async (analysisType: string) => {
-    setIsAnalyzing(true);
-    try {
-      await analyzeWithAI.mutateAsync(analysisType);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const handleLoadRealPrediction = async () => {
-    if (!selectedLottery) return;
-    setIsLoadingRealPrediction(true);
-    try {
-      const response = await apiFetch(`/api/prediction/generate/${selectedLottery}`);
-      if (!response.ok) throw new Error('Failed to load prediction');
-      const data = await response.json();
-      setRealPrediction(data);
-      toast({
-        title: "Prognóstico Real Carregado",
-        description: `${data.lotteryName} - Confiança: ${data.confidence.toFixed(0)}%`,
-      });
-    } catch (error) {
-      toast({
-        title: "Erro ao Carregar Prognóstico",
-        description: "Tente novamente em alguns momentos.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingRealPrediction(false);
-    }
-  };
-
-  const selectedLotteryData = lotteryTypes?.find(l => l.id === selectedLottery);
-
-  const getConfidenceColor = (confidence: string | number) => {
-    const conf = typeof confidence === 'string' ? parseFloat(confidence) : confidence;
-    if (conf >= 0.8) return "text-neon-green";
-    if (conf >= 0.6) return "text-accent";
-    if (conf >= 0.4) return "text-amber-500";
-    return "text-destructive";
-  };
-
-  const getRiskLevelColor = (riskLevel: string) => {
-    switch (riskLevel?.toLowerCase()) {
-      case 'low': case 'conservative': return "text-neon-green";
-      case 'medium': case 'balanced': return "text-accent";
-      case 'high': case 'aggressive': return "text-destructive";
-      default: return "text-muted-foreground";
-    }
-  };
 
   const aiLearningProgress = userStats ? Math.min(100, Math.floor((userStats.totalGames / 100) * 100)) : 0;
 
@@ -250,7 +38,7 @@ export default function AIAnalysis() {
         </div>
 
         {/* AI Status Overview */}
-        <Card className="analysis-card" style={CARD_STYLE}>
+        <Card className="analysis-card mb-6" style={CARD_STYLE}>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 gap-4">
               <div className="flex flex-col items-center text-center">
@@ -295,13 +83,12 @@ export default function AIAnalysis() {
               ))}
             </SelectContent>
           </Select>
-
         </div>
 
         {/* Quick Actions */}
         <div className="text-center mt-8">
           <div className="inline-flex gap-4">
-            <Button 
+            <Button
               onClick={() => setLocation('/generator')}
               className="bg-white/[0.04]"
               data-testid="go-to-generator-button"
@@ -310,7 +97,7 @@ export default function AIAnalysis() {
               Ir para Gerador
             </Button>
 
-            <Button 
+            <Button
               onClick={() => setLocation('/heat-map')}
               variant="outline"
               className="border-primary text-primary hover:bg-black/20"

@@ -488,9 +488,17 @@ export default function Generator() {
 
                       {/* Grid de números - Cartela estilo mapa de calor */}
                       <div className="glass-card rounded-xl p-3 mb-3 shadow-lg">
-                        <div className="number-grid grid grid-cols-10 gap-1.5">
+                        <div
+                          className="number-grid"
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: `repeat(${selectedLottery.totalNumbers <= 25 ? 5 : selectedLottery.totalNumbers <= 35 ? 7 : 10}, minmax(0, 1fr))`,
+                            gap: '6px',
+                          }}
+                        >
                           {Array.from({ length: selectedLottery.totalNumbers }, (_, i) => {
-                            const number = i + 1;
+                            const startNum = ['lotomania', 'supersete'].includes(selectedLottery.id) ? 0 : 1;
+                            const number = i + startNum;
                             const isSelected = selectedNumbers.includes(number);
                             const freq = getNumberFrequency(number);
                             const temp = freq?.temperature || 'cold';
