@@ -13,6 +13,7 @@ import adminRouter from "./routes/admin";
 import { logger } from "./lib/logger";
 import { runMigrations } from "@workspace/db";
 import { initDefaultProviders, listProviders } from "./lib/aiProviders";
+import { renderProxyMiddleware, isRenderProxyEnabled } from "./lib/renderProxy";
 import { LOTTERIES, fetchHistoricalDraws, computeFrequencies } from "./lib/lotteryData";
 import { runEnsemble } from "./lib/aiEnsemble";
 import type { LotteryContext } from "./lib/aiEnsemble";
@@ -107,12 +108,23 @@ app.use("/api/user/games",  gameLimiter);
 // ── Core routes ───────────────────────────────────────────────
 app.use("/api", router);
 
-// ── AI routes ─────────────────────────────────────────────────
-app.use("/api/ai-providers", aiProvidersRouter);
-app.use("/api/ai",           aiAnalysisRouter);
-app.use("/api/prediction",   predictionRouter);
-app.use("/api/chat",         chatRouter);
-app.use("/api/mcp",          mcpGatewayRouter);
+// ── Proxy Render (quando RENDER_API_URL está configurado) ─────
+// Encaminha rotas de IA para o servidor Render, evitando conflito de chaves.
+if (isRenderProxyEnabled()) {
+  logger.info({ url: process.env.RENDER_API_URL }, "Proxy Render ativado — rotas de IA encaminhadas para Render");
+  app.use("/api/ai-providers", renderProxyMiddleware);
+  app.use("/api/ai",           renderProxyMiddleware);
+  app.use("/api/prediction",   renderProxyMiddleware);
+  app.use("/api/chat",         renderProxyMiddleware);
+  app.use("/api/mcp",          renderProxyMiddleware);
+} else {
+  // ── AI routes (local) ────────────────────────────────────────
+  app.use("/api/ai-providers", aiProvidersRouter);
+  app.use("/api/ai",           aiAnalysisRouter);
+  app.use("/api/prediction",   predictionRouter);
+  app.use("/api/chat",         chatRouter);
+  app.use("/api/mcp",          mcpGatewayRouter);
+}
 app.use("/api/admin",        adminRouter);
 
 // ── Meta-reasoning routes (alias for AIMetrics page) ─────────
