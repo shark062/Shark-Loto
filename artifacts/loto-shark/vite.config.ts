@@ -46,6 +46,11 @@ export default defineConfig({
     hmr: isReplit
       ? { protocol: "wss", clientPort: 443 }
       : true,
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      "Pragma": "no-cache",
+      "Expires": "0",
+    },
     proxy: {
       "/api": {
         target: "http://localhost:8080",
