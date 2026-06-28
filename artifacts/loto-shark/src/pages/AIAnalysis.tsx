@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useLotteryTypes, useUserStats } from "@/hooks/useLotteryData";
 import { apiFetch, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { MCPAnalyzer } from "@/components/MCPAnalyzer";
 import { 
   Brain, 
   TrendingUp, 
@@ -297,15 +296,6 @@ export default function AIAnalysis() {
             </SelectContent>
           </Select>
 
-        </div>
-
-        {/* Analysis Content */}
-        <div className="space-y-6">
-          <Card className="analysis-card" style={CARD_STYLE}>
-            <CardContent className="p-5">
-              <MCPAnalyzer />
-            </CardContent>
-          </Card>
         </div>
 
         {/* Quick Actions */}
