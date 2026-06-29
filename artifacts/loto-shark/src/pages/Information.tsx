@@ -502,7 +502,7 @@ export default function Information() {
 
         {/* Estatísticas Rápidas */}
         <div className="grid grid-cols-2 gap-4 mb-8">
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardContent className="p-3 flex flex-col items-center text-center">
               <Target className="h-5 w-5 mb-1.5 text-primary" />
               <div className="text-lg font-bold text-primary neon-text">{lotteryData.length}</div>
@@ -510,7 +510,7 @@ export default function Information() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardContent className="p-3 flex flex-col items-center text-center">
               <Clock className="h-5 w-5 mb-1.5 text-accent" />
               <div className="text-lg font-bold text-accent neon-text">6x</div>
@@ -518,7 +518,7 @@ export default function Information() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardContent className="p-3 flex flex-col items-center text-center">
               <DollarSign className="h-5 w-5 mb-1.5 text-neon-green" />
               <div className="text-lg font-bold text-neon-green neon-text">R$ 2,50</div>
@@ -526,7 +526,7 @@ export default function Information() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardContent className="p-3 flex flex-col items-center text-center">
               <Users className="h-5 w-5 mb-1.5 text-secondary" />
               <div className="text-lg font-bold text-secondary neon-text">Milhões</div>
@@ -536,7 +536,7 @@ export default function Information() {
         </div>
 
         {/* Como o Shark Loterias Funciona */}
-        <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10 mb-8">
+        <Card className="sk-card mb-8">
           <CardHeader>
             <CardTitle className="text-primary flex items-center">
               <Brain className="h-6 w-6 mr-2" />
@@ -579,7 +579,7 @@ export default function Information() {
         </Card>
 
         {/* Informações das Loterias */}
-        <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10 mb-8">
+        <Card className="sk-card mb-8">
           <CardHeader>
             <CardTitle className="text-accent flex items-center">
               <BookOpen className="h-6 w-6 mr-2" />
@@ -688,7 +688,7 @@ export default function Information() {
         {/* Dicas e Estratégias */}
         <div className="grid grid-cols-1 gap-6 mb-8">
           {/* Dicas */}
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardHeader>
               <CardTitle className="text-secondary flex items-center">
                 <Lightbulb className="h-5 w-5 mr-2" />
@@ -739,7 +739,7 @@ export default function Information() {
           </Card>
 
           {/* Perguntas Frequentes */}
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardHeader>
               <CardTitle className="text-accent flex items-center">
                 <HelpCircle className="h-5 w-5 mr-2" />
@@ -793,7 +793,7 @@ export default function Information() {
         </div>
 
         {/* Aviso Legal e Isenção de Responsabilidade */}
-        <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+        <Card className="sk-card">
           <CardHeader>
             <CardTitle className="text-destructive flex items-center">
               <AlertTriangle className="h-6 w-6 mr-2" />

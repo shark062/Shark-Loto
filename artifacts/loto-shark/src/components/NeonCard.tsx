@@ -17,10 +17,9 @@ export function NeonCard({ children, className, glowColor = "none" }: NeonCardPr
 
   return (
     <div
-      style={{ background: "rgba(255, 255, 255, 0.40)", border: "1px solid rgba(255, 255, 255, 0.55)" }}
       className={cn(
-        "glass-card rounded-2xl p-6 relative overflow-hidden group transition-all duration-300",
-        glows[glowColor],
+        "sk-card p-4 relative overflow-hidden group transition-all duration-300",
+        glowColor !== "none" && glows[glowColor],
         className
       )}
     >

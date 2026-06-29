@@ -85,7 +85,7 @@ export default function Sobre() {
         </div>
 
         {/* Sobre o Projeto */}
-        <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10 mb-6">
+        <Card className="sk-card mb-6">
           <CardHeader>
             <CardTitle className="text-primary flex items-center gap-2 text-base">
               <Info className="h-5 w-5" />
@@ -111,7 +111,7 @@ export default function Sobre() {
         </Card>
 
         {/* Funcionalidades */}
-        <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10 mb-6">
+        <Card className="sk-card mb-6">
           <CardHeader>
             <CardTitle className="text-accent flex items-center gap-2 text-base">
               <Star className="h-5 w-5" />
@@ -132,7 +132,7 @@ export default function Sobre() {
         </Card>
 
         {/* Seção de Doação PIX */}
-        <Card className="mb-6 relative overflow-hidden">
+        <Card className="sk-card mb-6 relative overflow-hidden">
           {/* Brilho de fundo */}
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent pointer-events-none" />
 
@@ -258,7 +258,7 @@ export default function Sobre() {
         </Card>
 
         {/* Versão e créditos */}
-        <Card className="bg-white/[0.04] backdrop-blur-md border border-white/10 mb-6">
+        <Card className="sk-card mb-6">
           <CardContent className="pt-4 pb-4 space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Versão</span>
