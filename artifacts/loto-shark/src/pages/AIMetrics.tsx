@@ -112,7 +112,7 @@ export default function AIMetrics() {
           {/* Lottery Selector */}
           <div className="flex justify-center">
             <Select value={selectedLottery} onValueChange={setSelectedLottery}>
-              <SelectTrigger className="w-64 bg-slate-800/50 border-purple-500/20 text-white data-[placeholder]:text-muted-foreground">
+              <SelectTrigger className="w-64">
                 <SelectValue placeholder="Selecione a modalidade" />
               </SelectTrigger>
               <SelectContent>
@@ -128,11 +128,11 @@ export default function AIMetrics() {
 
         {/* Main Content */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-800/50 border-purple-500/20">
-            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-            <TabsTrigger value="comparison">Comparação</TabsTrigger>
-            <TabsTrigger value="recommendations">Recomendações</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-[rgba(10,10,35,0.95)] border border-white/10">
+            <TabsTrigger value="overview" className="text-white/70 data-[state=active]:text-white data-[state=active]:bg-[rgba(0,255,204,0.12)]">Visão Geral</TabsTrigger>
+            <TabsTrigger value="performance" className="text-white/70 data-[state=active]:text-white data-[state=active]:bg-[rgba(0,255,204,0.12)]">Performance</TabsTrigger>
+            <TabsTrigger value="comparison" className="text-white/70 data-[state=active]:text-white data-[state=active]:bg-[rgba(0,255,204,0.12)]">Comparação</TabsTrigger>
+            <TabsTrigger value="recommendations" className="text-white/70 data-[state=active]:text-white data-[state=active]:bg-[rgba(0,255,204,0.12)]">Recomendações</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}

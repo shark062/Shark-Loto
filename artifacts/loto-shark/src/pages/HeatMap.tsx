@@ -329,7 +329,6 @@ export default function HeatMap() {
           <div className="inline-flex gap-4">
             <Button 
               onClick={() => setLocation('/generator')}
-              className="bg-white/[0.07]"
               data-testid="go-to-generator-button"
             >
               <Zap className="h-4 w-4 mr-2" />
@@ -339,7 +338,6 @@ export default function HeatMap() {
             <Button 
               onClick={() => setLocation('/ai-analysis')}
               variant="outline"
-              className="border-secondary text-secondary hover:bg-white/[0.07] px-6 py-3"
               data-testid="ai-analysis-button"
             >
               <BarChart3 className="h-4 w-4 mr-2" />

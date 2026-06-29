@@ -671,7 +671,6 @@ export default function Information() {
                     <div className="text-center pt-2">
                       <Button
                         onClick={() => setLocation(`/generator?lottery=${lottery.id}`)}
-                        className="bg-white/[0.04] hover:bg-primary/20"
                         data-testid={`play-${lottery.id}-button`}
                       >
                         <Zap className="h-4 w-4 mr-2" />
@@ -849,7 +848,6 @@ export default function Information() {
           <div className="inline-flex gap-4">
             <Button
               onClick={() => setLocation('/generator')}
-              className="bg-white/[0.04] hover:bg-primary/20"
               data-testid="start-playing-button"
             >
               <Zap className="h-4 w-4 mr-2" />
@@ -859,7 +857,6 @@ export default function Information() {
             <Button
               onClick={() => setLocation('/heat-map')}
               variant="outline"
-              className="border-primary text-primary hover:bg-black/20"
               data-testid="view-analysis-button"
             >
               <BarChart3 className="h-4 w-4 mr-2" />

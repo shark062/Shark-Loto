@@ -1051,7 +1051,6 @@ export default function Generator() {
 
               <Button
                 onClick={() => setLocation('/results')}
-                className="bg-white/[0.04] hover:bg-primary/20"
                 data-testid="view-results-button"
               >
                 <Target className="h-4 w-4 mr-2" />

@@ -93,7 +93,6 @@ export default function AIAnalysis() {
           <div className="inline-flex gap-4 flex-wrap justify-center">
             <Button
               onClick={() => setLocation("/generator")}
-              className="bg-white/[0.04]"
               data-testid="go-to-generator-button"
             >
               <Zap className="h-4 w-4 mr-2" />
@@ -103,7 +102,6 @@ export default function AIAnalysis() {
             <Button
               onClick={() => setLocation("/heat-map")}
               variant="outline"
-              className="border-primary text-primary hover:bg-black/20"
               data-testid="view-heatmap-button"
             >
               <BarChart3 className="h-4 w-4 mr-2" />

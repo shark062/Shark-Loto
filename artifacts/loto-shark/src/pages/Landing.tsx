@@ -77,7 +77,6 @@ export default function Landing() {
             <Button
               onClick={() => window.location.href = '/api/login'}
               size="lg"
-              className="bg-white/[0.04]"
               data-testid="login-button"
             >
               <Zap className="h-6 w-6 mr-2" />
@@ -86,7 +85,7 @@ export default function Landing() {
             <Button
               variant="outline"
               size="lg"
-              className="border-secondary text-secondary hover:bg-black/20 px-8 py-4 text-xl"
+              className="px-8 py-4 text-xl"
               onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
               data-testid="learn-more-button"
             >
@@ -205,7 +204,6 @@ export default function Landing() {
             <Button
               onClick={() => window.location.href = '/api/login'}
               size="lg"
-              className="bg-white/[0.04]"
               data-testid="cta-login-button"
             >
               <DollarSign className="h-8 w-8 mr-3" />
