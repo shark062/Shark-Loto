@@ -38,7 +38,7 @@ app.use(
 );
 
 // ── CORS ───────────────────────────────────────────────────────
-const allowedOrigins = [
+const allowedOrigins: Array<string | RegExp> = [
   /^https?:\/\/localhost(:\d+)?$/,
   /\.onrender\.com$/,
   /\.replit\.dev$/,
@@ -46,7 +46,16 @@ const allowedOrigins = [
   /\.repl\.co$/,
   /\.netlify\.app$/,
   /\.vercel\.app$/,
+  /\.render\.com$/,
 ];
+
+// Origem extra via variável de ambiente CORS_ORIGIN
+if (process.env.CORS_ORIGIN) {
+  process.env.CORS_ORIGIN.split(',').forEach(origin => {
+    const trimmed = origin.trim();
+    if (trimmed) allowedOrigins.push(trimmed);
+  });
+}
 
 app.use(cors({
   origin: (origin, callback) => {

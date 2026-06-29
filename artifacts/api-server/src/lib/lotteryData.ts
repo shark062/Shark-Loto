@@ -1,6 +1,14 @@
 const CAIXA_API = 'https://servicebus2.caixa.gov.br/portaldeloterias/api';
-// URL alternativa pública (mirror não-oficial) — usada quando a Caixa bloqueia o IP do servidor
-const CAIXA_ALT_API = 'https://loteriasapi.vercel.app/api';
+
+// Lista de fallbacks em ordem de prioridade
+// 1 - API principal da Caixa
+// 2 - Mirror loteriasapi (Vercel)
+// 3 - API alternativa loteria.go.dev
+export const CAIXA_FALLBACKS: Array<{ name: string; baseUrl: string; timeout: number }> = [
+  { name: 'caixa-principal',  baseUrl: 'https://servicebus2.caixa.gov.br/portaldeloterias/api', timeout: 10000 },
+  { name: 'loteriasapi',      baseUrl: 'https://loteriasapi.vercel.app/api',                    timeout: 8000  },
+  { name: 'loteria-alt',      baseUrl: 'https://loterias-api.vercel.app/api',                   timeout: 8000  },
+];
 
 const CAIXA_HEADERS = {
   'Accept': 'application/json, text/plain, */*',
@@ -65,13 +73,15 @@ export async function fetchLatestDraw(lotteryId: string): Promise<any | null> {
     return cached.data;
   }
 
-  // Tenta a URL principal da Caixa
-  let data = await tryFetchCaixa(`${CAIXA_API}/${lotteryId}`, 10000);
-
-  // Fallback: tenta URL alternativa caso o Render tenha o IP bloqueado pela Caixa
-  if (!data) {
-    console.warn(`[Caixa] Fallback alt-api para ${lotteryId}`);
-    data = await tryFetchCaixa(`${CAIXA_ALT_API}/${lotteryId}`, 8000);
+  // Tenta cada fallback em ordem de prioridade
+  let data: any = null;
+  for (const fb of CAIXA_FALLBACKS) {
+    data = await tryFetchCaixa(`${fb.baseUrl}/${lotteryId}`, fb.timeout);
+    if (data) {
+      console.info(`[Caixa] ${fb.name} → OK para ${lotteryId}`);
+      break;
+    }
+    console.warn(`[Caixa] ${fb.name} → falhou, tentando próximo...`);
   }
 
   if (data) {

@@ -142,7 +142,7 @@ export default function HeatMap() {
 
         {/* Temperature Statistics */}
         <div className="grid grid-cols-1 gap-4 mb-8">
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-1.5 mb-1.5">
                 <Flame className="h-4 w-4 text-destructive" />
@@ -155,7 +155,7 @@ export default function HeatMap() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-1.5 mb-1.5">
                 <Sun className="h-4 w-4 text-amber-500" />
@@ -168,7 +168,7 @@ export default function HeatMap() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-1.5 mb-1.5">
                 <Snowflake className="h-4 w-4 text-primary" />
@@ -198,7 +198,7 @@ export default function HeatMap() {
         {/* Analysis Panels */}
         <div className="grid grid-cols-1 gap-6 mb-8">
           {/* Most Frequent Numbers */}
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardHeader>
               <CardTitle className="text-destructive flex items-center">
                 <TrendingUp className="h-5 w-5 mr-2" />
@@ -226,7 +226,7 @@ export default function HeatMap() {
           </Card>
 
           {/* Least Frequent Numbers */}
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardHeader>
               <CardTitle className="text-primary flex items-center">
                 <TrendingDown className="h-5 w-5 mr-2" />
@@ -254,7 +254,7 @@ export default function HeatMap() {
           </Card>
 
           {/* Selected Number Details */}
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardHeader>
               <CardTitle className="text-accent flex items-center">
                 <Target className="h-5 w-5 mr-2" />

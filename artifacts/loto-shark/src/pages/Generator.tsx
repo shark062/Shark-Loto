@@ -357,7 +357,7 @@ export default function Generator() {
 
         <div className="grid grid-cols-1 gap-4">
           {/* Generator Form */}
-          <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+          <Card className="sk-card">
             <CardHeader>
               <CardTitle className="text-primary flex items-center">
                 <Settings className="h-5 w-5 mr-2" />
@@ -446,7 +446,7 @@ export default function Generator() {
                 )}
 
                 {/* Strategy — single fixed option */}
-                <Card className="bg-primary/20 border-primary/50 shadow-lg shadow-primary/20">
+                <Card className="sk-card border-primary/50 shadow-lg shadow-primary/20">
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -469,7 +469,7 @@ export default function Generator() {
 
                 {/* Manual Number Selection */}
                 {form.watch('strategy') === 'manual' && selectedLottery && (
-                  <Card className="bg-white/[0.04]">
+                  <Card className="sk-card">
                     <CardContent className="p-3">
                       <div className="flex items-center justify-between mb-3">
                         <h5 className="font-medium text-accent flex items-center">
@@ -600,7 +600,7 @@ export default function Generator() {
 
                 {/* Strategy Details */}
                 {form.watch('strategy') && form.watch('strategy') !== 'manual' && (
-                  <Card className="bg-white/[0.04]">
+                  <Card className="sk-card">
                     <CardContent className="p-3">
                       <h5 className="font-medium text-accent mb-2 flex items-center">
                         <Sparkles className="h-4 w-4 mr-2" />
@@ -712,7 +712,7 @@ export default function Generator() {
             const ctx = (generatedGames[0] as any)?.rawGame?.sharkContexto || (generatedGames[0] as any)?.sharkContexto;
             if (!ctx) return null;
             return (
-              <Card className="bg-white/[0.06] backdrop-blur-md border border-primary/30">
+              <Card className="sk-card border-primary/30">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-primary text-sm flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
@@ -777,7 +777,7 @@ export default function Generator() {
 
           {/* Generated Games */}
           <div className="space-y-3">
-            <Card className="bg-white/[0.06] backdrop-blur-md border border-white/10">
+            <Card className="sk-card">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-accent flex items-center">
                   <Dice6 className="h-5 w-5 mr-2" />

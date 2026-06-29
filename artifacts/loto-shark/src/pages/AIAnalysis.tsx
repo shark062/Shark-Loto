@@ -7,10 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { useLotteryTypes, useUserStats } from "@/hooks/useLotteryData";
 import { Brain, Target, BarChart3, Zap, Activity } from "lucide-react";
 
-const CARD_STYLE: React.CSSProperties = {
-  background: "rgba(10, 15, 30, 0.82)",
-  border: "1px solid rgba(255, 255, 255, 0.12)",
-};
+const CARD_STYLE: React.CSSProperties = {};
 
 export default function AIAnalysis() {
   const [, setLocation] = useLocation();
@@ -41,7 +38,7 @@ export default function AIAnalysis() {
         </div>
 
         {/* AI Status Overview */}
-        <Card className="analysis-card mb-6" style={CARD_STYLE}>
+        <Card className="sk-card analysis-card mb-6">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 gap-6">
               {/* Nível IA */}

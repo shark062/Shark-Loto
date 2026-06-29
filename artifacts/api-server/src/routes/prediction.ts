@@ -3,6 +3,7 @@ import { runEnsemble, callWithFallback } from "../lib/aiEnsemble";
 import { listProviders } from "../lib/aiProviders";
 import { LOTTERIES, fetchHistoricalDraws, computeFrequencies, generateSmartNumbers } from "../lib/lotteryData";
 import type { LotteryContext, DrawData } from "../lib/aiEnsemble";
+import { generateEnsemble, getStrategyMemory } from "../core/sharkEnsembleEngine";
 
 const router = Router();
 
@@ -149,6 +150,53 @@ router.post("/ensemble", async (req, res) => {
     });
   } catch (err: any) {
     res.status(500).json({ message: "Erro no ensemble: " + err.message });
+  }
+});
+
+// GET /api/prediction/shark-ensemble/:lotteryId — Motor Shark Ensemble avançado
+router.get("/shark-ensemble/:lotteryId", async (req, res) => {
+  const { lotteryId } = req.params;
+  const lottery = LOTTERIES.find(l => l.id === lotteryId);
+  if (!lottery) { res.status(404).json({ message: "Loteria não encontrada" }); return; }
+
+  try {
+    const draws = await fetchHistoricalDraws(lotteryId, 30).catch(() => [] as number[][]);
+    const result = await generateEnsemble({
+      draws,
+      totalNumbers: lottery.totalNumbers,
+      minNumbers:   lottery.minNumbers,
+      candidatesPerStrategy: 3,
+    });
+
+    res.json({
+      lotteryId,
+      lotteryName:     lottery.displayName,
+      bestGame:        result.best.jogo,
+      finalScore:      result.best.finalScore,
+      strategy:        result.best.strategy,
+      topCandidates:   result.candidates.slice(0, 5).map(c => ({
+        jogo:            c.jogo,
+        strategy:        c.strategy,
+        finalScore:      Math.round(c.finalScore * 10) / 10,
+        simulationScore: Math.round(c.simulationScore * 100) / 100,
+        penaltyScore:    Math.round(c.penaltyScore * 10) / 10,
+      })),
+      backtestReport: {
+        bestStrategy:  result.backtestReport.bestStrategy,
+        results:       result.backtestReport.results.map(r => ({
+          strategy:    r.strategy,
+          averageHits: Math.round(r.averageHits * 100) / 100,
+          bestScore:   r.bestScore,
+          confidence:  Math.round(r.confidence * 100) / 100,
+        })),
+      },
+      adaptivePesos:  result.adaptivePesos,
+      coverageInfo:   result.coverageInfo,
+      strategyMemory: getStrategyMemory(),
+      drawsAnalyzed:  draws.length,
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: "Erro no Shark Ensemble: " + err.message });
   }
 });
 

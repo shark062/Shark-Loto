@@ -136,7 +136,7 @@ function LiveSorteioCard({ userGames }: { userGames: any[] }) {
   const getLotteryName = (id: string) => (lotteryTypes as any[])?.find(l => l.id === id)?.displayName || id;
 
   return (
-    <Card className="bg-white/[0.04] border border-red-500/40 mb-6">
+    <Card className="sk-card border-red-500/40 mb-6">
       <CardHeader className="pb-2">
         <CardTitle className="text-red-400 flex items-center gap-2 text-base">
           <Tv2 className="h-5 w-5" />
@@ -666,7 +666,7 @@ export default function Results() {
         {liveStatus?.isLive ? (
           <LiveSorteioCard userGames={gamesList} />
         ) : (
-          <Card className="bg-white/[0.04] border border-white/10 mb-6">
+          <Card className="sk-card mb-6">
             <CardContent className="py-4 flex items-center gap-3 text-muted-foreground text-sm">
               <Tv2 className="h-4 w-4 shrink-0" />
               <span>Nenhum sorteio ao vivo agora. O card de transmissão aparece automaticamente quando houver sorteio em andamento.</span>
@@ -675,7 +675,7 @@ export default function Results() {
         )}
 
         {/* Filtros */}
-        <Card className="bg-white/[0.04] mb-4 p-3">
+        <Card className="sk-card mb-4 p-3">
           <div className="grid grid-cols-1 gap-2">
             <Select value={filterLottery} onValueChange={setFilterLottery}>
               <SelectTrigger><SelectValue placeholder="Modalidade" /></SelectTrigger>
@@ -693,7 +693,7 @@ export default function Results() {
         </Card>
 
         {/* Histórico */}
-        <Card className="bg-white/[0.04] backdrop-blur-sm">
+        <Card className="sk-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-primary text-base">Histórico de Jogos</CardTitle>
           </CardHeader>

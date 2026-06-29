@@ -67,27 +67,20 @@ function getCfg(id: string) {
 // ─── Skeleton card ───────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div
-      className="rounded-2xl animate-pulse p-5 flex flex-col gap-3"
-      style={{
-        background: "rgba(5,10,30,0.75)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        backdropFilter: "blur(12px)",
-      }}
-    >
+    <div className="sk-skeleton p-5 flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-white/10" />
+        <div className="sk-avatar sk-skeleton__bar" style={{ fontSize: 0 }} />
         <div className="flex-1 space-y-2">
-          <div className="h-4 bg-white/15 rounded w-28" />
-          <div className="h-3 bg-white/10 rounded w-36" />
+          <div className="h-4 sk-skeleton__bar rounded w-28" />
+          <div className="h-3 sk-skeleton__bar rounded w-36" />
         </div>
       </div>
-      <div className="h-16 bg-white/10 rounded-xl w-full" />
-      <div className="h-3 bg-white/10 rounded w-32" />
+      <div className="h-16 sk-skeleton__bar rounded-xl w-full" />
+      <div className="h-3 sk-skeleton__bar rounded w-32" />
       <div className="flex gap-2">
-        <div className="h-11 bg-white/10 rounded-xl flex-1" />
-        <div className="h-11 bg-white/10 rounded-xl flex-1" />
-        <div className="h-11 bg-white/10 rounded-xl flex-1" />
+        <div className="h-11 sk-skeleton__bar rounded-xl flex-1" />
+        <div className="h-11 sk-skeleton__bar rounded-xl flex-1" />
+        <div className="h-11 sk-skeleton__bar rounded-xl flex-1" />
       </div>
     </div>
   );
@@ -119,30 +112,14 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
 
   return (
     <div
-      className="rounded-2xl transition-all duration-200"
-      style={{
-        background: isLive
-          ? "rgba(30,5,5,0.82)"
-          : "rgba(5,10,30,0.78)",
-        border: isLive
-          ? "1px solid rgba(239,68,68,0.55)"
-          : "1px solid rgba(255,255,255,0.15)",
-        backdropFilter: "blur(14px)",
-        WebkitBackdropFilter: "blur(14px)",
-      }}
+      className={`sk-card transition-all duration-200${isLive ? " sk-card--live" : ""}`}
       data-testid={`lottery-card-${lottery.id}`}
     >
       {/* ── Topo: identidade ──────────────────────────────────────────── */}
       <div className="p-4 pb-3">
         <div className="flex items-center gap-3 mb-3">
           {/* Emoji avatar */}
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
-            style={{
-              background: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.15)",
-            }}
-          >
+          <div className="sk-avatar">
             {cfg.emoji}
           </div>
 
@@ -239,14 +216,7 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
         ].map(({ icon, label, path, testId }) => (
           <button
             key={label}
-            className="flex-1 h-11 flex flex-col items-center justify-center gap-0.5 rounded-xl transition-all active:scale-95"
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.14)",
-              color: "rgba(255,255,255,0.85)",
-              fontSize: "0.7rem",
-              fontWeight: 600,
-            }}
+            className="sk-action-btn"
             onClick={() => setLocation(path)}
             data-testid={testId}
           >
