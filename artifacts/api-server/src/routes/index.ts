@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import lotteryRouter from "./lottery";
+import simpleResultsRouter from "./simpleResults";
 import { Request, Response } from "express";
 import { LOTTERIES, fetchLatestDraw, fetchHistoricalDraws, computeFrequencies } from "../lib/lotteryData";
 import { gerarJogosMaster, gerarDesdobramento } from "../core/sharkEngine";
@@ -13,6 +14,9 @@ const router: IRouter = Router();
 router.use(healthRouter);
 
 router.use("/lotteries", lotteryRouter);
+
+// Simple result endpoints: /api/megasena, /api/lotofacil, /api/quina, /api/lotomania, /api/todas
+router.use("/", simpleResultsRouter);
 
 router.get("/lottery/games", async (req: Request, res: Response) => {
   try {
