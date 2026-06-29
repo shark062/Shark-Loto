@@ -454,6 +454,17 @@ router.post("/games/generate", async (req: Request, res: Response) => {
       return;
     }
 
+    // Busca o número do próximo concurso real para registrar no jogo
+    let nextContestNumber: number | null = null;
+    let nextDrawDate: string | null = null;
+    try {
+      const latestDraw = await fetchLatestDraw(lotteryId);
+      if (latestDraw) {
+        nextContestNumber = latestDraw.numeroConcursoProximo ?? ((latestDraw.numero ?? 0) + 1);
+        nextDrawDate = latestDraw.dataProximoConcurso ?? null;
+      }
+    } catch { /* ignora — contestNumber ficará null */ }
+
     const insertValues = jogos.map(result => ({
       lotteryId,
       selectedNumbers: result.jogo,
@@ -476,7 +487,7 @@ router.post("/games/generate", async (req: Request, res: Response) => {
       },
       matches: 0,
       prizeWon: '0',
-      contestNumber: null as number | null,
+      contestNumber: nextContestNumber,
       status: 'pending',
       hits: 0,
     }));

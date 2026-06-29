@@ -1,4 +1,15 @@
 const CAIXA_API = 'https://servicebus2.caixa.gov.br/portaldeloterias/api';
+// URL alternativa pública (mirror não-oficial) — usada quando a Caixa bloqueia o IP do servidor
+const CAIXA_ALT_API = 'https://loteriasapi.vercel.app/api';
+
+const CAIXA_HEADERS = {
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+  'Referer': 'https://loterias.caixa.gov.br/',
+  'Origin': 'https://loterias.caixa.gov.br',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Cache-Control': 'no-cache',
+};
 
 export const LOTTERIES = [
   { id: 'megasena',   displayName: 'Mega-Sena',    emoji: '💎', minNumbers: 6,  maxNumbers: 15, totalNumbers: 60,  startNumber: 1, drawDays: ['Terça','Quinta','Sábado'],              drawTime: '20:00', isActive: true },
@@ -33,13 +44,19 @@ type LatestCache = { data: any; fetchedAt: number };
 const latestCache: Record<string, LatestCache> = {};
 const LATEST_TTL = 2 * 60 * 1000; // 2 minutos
 
-const CAIXA_HEADERS = {
-  'Accept': 'application/json, text/plain, */*',
-  'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-  'Referer': 'https://loterias.caixa.gov.br/',
-  'Origin': 'https://loterias.caixa.gov.br',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-};
+async function tryFetchCaixa(url: string, timeout = 10000): Promise<any | null> {
+  try {
+    const resp = await fetch(url, {
+      headers: CAIXA_HEADERS,
+      signal: AbortSignal.timeout(timeout),
+    });
+    if (resp.ok) return await resp.json();
+    console.error(`[Caixa] ${url} → HTTP ${resp.status}`);
+  } catch (err: any) {
+    console.error(`[Caixa] ${url} → ERRO: ${err?.message ?? err}`);
+  }
+  return null;
+}
 
 export async function fetchLatestDraw(lotteryId: string): Promise<any | null> {
   // Devolve do cache se ainda válido (evita hammer na API da Caixa)
@@ -48,21 +65,20 @@ export async function fetchLatestDraw(lotteryId: string): Promise<any | null> {
     return cached.data;
   }
 
-  const url = `${CAIXA_API}/${lotteryId}`;
-  try {
-    const resp = await fetch(url, {
-      headers: CAIXA_HEADERS,
-      signal: AbortSignal.timeout(10000),
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      latestCache[lotteryId] = { data, fetchedAt: Date.now() };
-      return data;
-    }
-    console.error(`[Caixa] ${lotteryId} → HTTP ${resp.status}`);
-  } catch (err: any) {
-    console.error(`[Caixa] ${lotteryId} → ERRO: ${err?.message ?? err}`);
+  // Tenta a URL principal da Caixa
+  let data = await tryFetchCaixa(`${CAIXA_API}/${lotteryId}`, 10000);
+
+  // Fallback: tenta URL alternativa caso o Render tenha o IP bloqueado pela Caixa
+  if (!data) {
+    console.warn(`[Caixa] Fallback alt-api para ${lotteryId}`);
+    data = await tryFetchCaixa(`${CAIXA_ALT_API}/${lotteryId}`, 8000);
   }
+
+  if (data) {
+    latestCache[lotteryId] = { data, fetchedAt: Date.now() };
+    return data;
+  }
+
   // Retorna cache expirado se disponível (fallback gracioso)
   return cached?.data ?? null;
 }

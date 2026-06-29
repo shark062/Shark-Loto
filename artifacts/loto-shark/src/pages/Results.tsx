@@ -359,20 +359,38 @@ export default function Results() {
       const LINE = 7;
 
       // Cabeçalho
+      // Coleta informações de concurso/data dos jogos filtrados para exibir no PDF
+      const concursosInfo = filteredGames.reduce<Record<string, { contest: number | null; date: string }>>((acc, g) => {
+        if (!acc[g.lotteryId]) {
+          acc[g.lotteryId] = {
+            contest: g.contestNumber ?? null,
+            date: g.createdAt ? new Date(g.createdAt).toLocaleDateString('pt-BR') : '—',
+          };
+        }
+        return acc;
+      }, {});
+
       doc.setFillColor(10, 10, 30);
-      doc.rect(0, 0, W, 38, 'F');
+      doc.rect(0, 0, W, 42, 'F');
       doc.setFontSize(18);
       doc.setTextColor(0, 200, 255);
       doc.setFont('helvetica', 'bold');
-      doc.text('SHARK LOTERIAS', W / 2, 15, { align: 'center' });
+      doc.text('SHARK LOTERIAS', W / 2, 14, { align: 'center' });
       doc.setFontSize(10);
       doc.setTextColor(180, 180, 200);
       doc.setFont('helvetica', 'normal');
-      doc.text('Relatório Detalhado de Jogos Gerados', W / 2, 23, { align: 'center' });
-      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, W / 2, 31, { align: 'center' });
+      doc.text('Relatório Detalhado de Jogos Gerados', W / 2, 22, { align: 'center' });
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, W / 2, 30, { align: 'center' });
+      // Linha de concurso: mostra o(s) concurso(s) presentes
+      const contestLines = Object.entries(concursosInfo)
+        .map(([lid, info]) => `${getLotteryName(lid)}: Concurso #${info.contest ?? '—'}`)
+        .join('   ');
+      doc.setFontSize(8.5);
+      doc.setTextColor(0, 230, 120);
+      doc.text(contestLines || 'Concurso: —', W / 2, 38, { align: 'center' });
 
       // Resumo
-      let y = 50;
+      let y = 54;
       doc.setFontSize(12);
       doc.setTextColor(0, 180, 255);
       doc.setFont('helvetica', 'bold');
@@ -482,7 +500,7 @@ export default function Results() {
 
       // Cabeçalho
       doc.setFillColor(10, 10, 30);
-      doc.rect(0, 0, W, 32, 'F');
+      doc.rect(0, 0, W, 36, 'F');
       doc.setFontSize(16);
       doc.setTextColor(0, 200, 255);
       doc.setFont('helvetica', 'bold');
@@ -493,7 +511,7 @@ export default function Results() {
       doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, W / 2, 21, { align: 'center' });
       doc.text(`Total de jogos: ${filteredGames.length}`, W / 2, 28, { align: 'center' });
 
-      let y = 44;
+      let y = 47;
 
       // Agrupa por modalidade
       const byLottery: Record<string, any[]> = {};
@@ -516,8 +534,13 @@ export default function Results() {
         doc.setTextColor(120, 120, 140);
         doc.setFont('helvetica', 'normal');
         const contestSample = games[0]?.contestNumber;
+        const dateSample = games[0]?.createdAt
+          ? new Date(games[0].createdAt).toLocaleDateString('pt-BR')
+          : null;
         doc.text(
-          `${games.length} jogo${games.length !== 1 ? 's' : ''}${contestSample ? `  •  Concurso #${contestSample}` : ''}`,
+          `${games.length} jogo${games.length !== 1 ? 's' : ''}` +
+          (contestSample ? `  •  Concurso #${contestSample}` : '') +
+          (dateSample ? `  •  ${dateSample}` : ''),
           MARGIN,
           y + 6,
         );
