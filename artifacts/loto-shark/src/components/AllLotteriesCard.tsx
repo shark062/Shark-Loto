@@ -206,8 +206,8 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
 
       {/* ── Ações ─────────────────────────────────────────────────────── */}
       <div
-        className="px-4 pb-4 pt-0 flex gap-2"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "12px", marginTop: "2px" }}
+        className="flex overflow-hidden"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "4px" }}
       >
         {[
           { icon: <Zap className="h-4 w-4" />, label: "Gerar",     path: `/generator?lottery=${lottery.id}`,     testId: `quick-generate-${lottery.id}` },
