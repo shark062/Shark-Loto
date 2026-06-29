@@ -6,6 +6,13 @@ services:
     buildCommand: cd artifacts/loto-shark && npm install --legacy-peer-deps && npm run build
     staticPublishPath: artifacts/loto-shark/dist/public
     pullRequestPreviewsEnabled: false
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
     routes:
       - type: rewrite
         source: /*

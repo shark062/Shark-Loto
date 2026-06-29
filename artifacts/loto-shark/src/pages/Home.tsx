@@ -242,7 +242,7 @@ export default function Home() {
 
       <Navigation />
 
-      <main className={`container mx-auto px-4 py-0 relative z-40 ${isMenuOpen ? 'hidden' : ''}`}>
+      <main className={`container mx-auto px-4 pt-3 pb-24 relative z-40 ${isMenuOpen ? 'hidden' : ''}`}>
 
         {/* All Lotteries - Complete Dashboard */}
         <section className="mb-2">

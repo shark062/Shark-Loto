@@ -1,5 +1,135 @@
+# PROMPT COMPLETO — SHARK LOTERIAS: CORREÇÕES DE API, LAYOUT E RESPONSIVIDADE
+
+> Aplique TODAS as correções abaixo exatamente como especificado.
+> Não altere nenhum arquivo além dos listados. Não instale pacotes novos.
+> Após aplicar, reinicie frontend e backend.
+
+---
+
+## PROBLEMA 1 — API NÃO CARREGA DADOS NO RENDER
+
+**Causa raiz:** O `caixaApi.ts` do frontend ainda usa `fetch` direto sem passar pela variável `VITE_API_BASE_URL` para a função `apiFetch` interna. A função `apiFetch` local do arquivo não usa `resolveApiUrl`, então quando o frontend está no Render apontando para o backend externo, as chamadas `/api/lotteries/*` vão para o endereço errado (próprio frontend estático, que não tem API).
+
+**Arquivo:** `artifacts/loto-shark/src/lib/caixaApi.ts`
+
+Substitua a função `apiFetch` interna do arquivo por esta versão que usa `resolveApiUrl` e `credentialsMode` do `queryClient`:
+
+```typescript
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+function formatBRL(value: string | number | null | undefined): string {
+  const n = Number(value);
+  if (!n || n <= 0) return "R$ 0,00";
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 }).format(n);
+}
+
+// CORREÇÃO: usa resolveApiUrl para honrar VITE_API_BASE_URL no Render
+import { resolveApiUrl } from "@/lib/queryClient";
+
+async function apiFetch<T>(path: string): Promise<T | null> {
+  try {
+    const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
+    const credentials: RequestCredentials = API_BASE ? "omit" : "include";
+    const res = await fetch(resolveApiUrl(path), { credentials });
+    if (res.ok) return (await res.json()) as T;
+  } catch {
+    // falha de rede — retorna null para fallback
+  }
+  return null;
+}
+```
+
+**ATENÇÃO:** Mantenha TODO o resto do arquivo `caixaApi.ts` exatamente igual. Apenas substitua o bloco `// ─── helpers ───` (as funções `formatBRL` e `apiFetch`).
+
+---
+
+## PROBLEMA 2 — RENDER.YAML: VITE_API_BASE_URL NÃO CONFIGURADO
+
+**Causa raiz:** O `render.yaml` não passa a variável de ambiente `VITE_API_BASE_URL` para o frontend, então o frontend não sabe o endereço do backend no Render.
+
+**Arquivo:** `render.yaml`
+
+Substitua o arquivo COMPLETO por:
+
+```yaml
+services:
+  # Frontend estático
+  - type: web
+    name: loto-shark-frontend
+    runtime: static
+    buildCommand: cd artifacts/loto-shark && npm install --legacy-peer-deps && npm run build
+    staticPublishPath: artifacts/loto-shark/dist/public
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # API backend
+  - type: web
+    name: loto-shark-api
+    runtime: node
+    buildCommand: cd artifacts/api-server && npm install --legacy-peer-deps && npm run build
+    startCommand: node artifacts/api-server/dist/index.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+```
+
+**IMPORTANTE:** Após fazer o deploy no Render, vá em "Environment" do serviço `loto-shark-frontend` e defina manualmente:
+```
+VITE_API_BASE_URL = https://loto-shark-api-XXXX.onrender.com
+```
+(substitua pelo URL real do seu serviço de API no Render)
+
+---
+
+## PROBLEMA 3 — CORS: ADICIONAR DOMÍNIO DO FRONTEND NO BACKEND
+
+**Causa raiz:** O backend no Render precisa aceitar requisições do domínio do frontend estático do Render.
+
+**Arquivo:** `artifacts/api-server/src/app.ts`
+
+Localize o array `allowedOrigins` e substitua por:
+
+```typescript
+const allowedOrigins = [
+  /^https?:\/\/localhost(:\d+)?$/,
+  /\.onrender\.com$/,
+  /\.replit\.dev$/,
+  /\.replit\.app$/,
+  /\.repl\.co$/,
+  /\.netlify\.app$/,
+  /\.vercel\.app$/,
+];
+```
+
+---
+
+## PROBLEMA 4 — LAYOUT: CARDS E BOTÕES DESPADRONIZADOS
+
+**Objetivo:** Padronizar o visual dos cards de loteria para seguir o padrão de app nativo Android/iOS:
+- Espaçamento interno consistente (padding uniforme)
+- Botões de ação com altura fixa e tamanho de toque adequado (mínimo 48px)
+- Tipografia hierárquica (título grande, subtítulo médio, detalhe pequeno)
+- Grid responsivo: 1 coluna em mobile, 2 em tablet, 3+ em desktop
+- Sem cards "colados" nem muito separados — gap fixo de 12px mobile / 16px tablet
+
+**Arquivo:** `artifacts/loto-shark/src/components/AllLotteriesCard.tsx`
+
+Substitua o arquivo COMPLETO por:
+
+```tsx
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useLotteryTypes, useNextDrawInfo } from "@/hooks/useLotteryData";
 import { getLocalDrawDate } from "@/lib/caixaApi";
 import { Trophy, Clock, Zap, Target, ShoppingCart, Radio, Calendar } from "lucide-react";
@@ -212,7 +342,9 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
       </div>
 
       {/* ── Ações ───────────────────────────────────────────────────────── */}
-      <div className="px-4 pb-4 pt-0 flex gap-2">
+      <div
+        className="px-4 pb-4 pt-0 flex gap-2"
+      >
         {/* Gerar */}
         <button
           className="flex-1 h-12 flex flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
@@ -326,3 +458,251 @@ export default function AllLotteriesCard() {
     </div>
   );
 }
+```
+
+---
+
+## PROBLEMA 5 — RESPONSIVIDADE GLOBAL: CSS
+
+**Arquivo:** `artifacts/loto-shark/src/index.css`
+
+Localize o bloco `main {` e substitua **apenas esse bloco** por:
+
+```css
+main {
+  min-height: calc(100vh - 140px);
+  padding-top: 0.75rem;
+  padding-bottom: 5rem; /* espaço para BottomNav mobile */
+}
+
+@media (min-width: 1024px) {
+  main {
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+  }
+}
+```
+
+Após o bloco `main`, adicione (se ainda não existir) o seguinte bloco de tipografia responsiva logo antes do `/* Cards específicos */`:
+
+```css
+/* ── Tipografia responsiva base ── */
+html {
+  font-size: 15px;
+}
+@media (min-width: 390px)  { html { font-size: 15.5px; } }
+@media (min-width: 430px)  { html { font-size: 16px;   } }
+@media (min-width: 768px)  { html { font-size: 16px;   } }
+@media (min-width: 1024px) { html { font-size: 16px;   } }
+
+/* ── Área de toque mínima (WCAG / Material Design) ── */
+@media (pointer: coarse) {
+  button, [role="button"], a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Exceção: botões internos de grids de números */
+  .number-grid button,
+  .select-shark-list button {
+    min-height: unset !important;
+    min-width: unset !important;
+  }
+}
+
+/* ── Container fluido seguro ── */
+.container {
+  width: 100%;
+  max-width: min(100%, 480px);    /* mobile-first: máximo 480px */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+@media (min-width: 640px) {
+  .container {
+    max-width: 768px;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1200px;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+```
+
+---
+
+## PROBLEMA 6 — HOME.TSX: PADDING REMOVIDO QUE CAUSAVA CARDS COLADOS NO TOPO
+
+**Arquivo:** `artifacts/loto-shark/src/pages/Home.tsx`
+
+Localize a linha que contém `py-0` no `<main>`:
+```tsx
+<main className={`container mx-auto px-4 py-0 relative z-40 ${isMenuOpen ? 'hidden' : ''}`}>
+```
+
+Substitua por:
+```tsx
+<main className={`container mx-auto px-4 pt-3 pb-24 relative z-40 ${isMenuOpen ? 'hidden' : ''}`}>
+```
+
+---
+
+## VERIFICAÇÃO FINAL
+
+Após aplicar todas as correções, confirme:
+
+1. **`caixaApi.ts`**: a função `apiFetch` importa e usa `resolveApiUrl` de `@/lib/queryClient`
+2. **`render.yaml`**: tem `VITE_API_BASE_URL` como env do serviço frontend
+3. **`app.ts`**: `allowedOrigins` inclui `/\.netlify\.app$/` e `/\.vercel\.app$/`
+4. **`AllLotteriesCard.tsx`**: usa `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3`
+5. **`index.css`**: tem o bloco de tipografia responsiva e o `.container` com `max-width: min(100%, 480px)` para mobile
+6. **`Home.tsx`**: `<main>` tem `pt-3 pb-24` (sem `py-0`)
+
+---
+
+## O QUE NÃO FAZER
+
+- ❌ Não altere `package.json`, `tsconfig.json`, `vite.config.ts`
+- ❌ Não altere o schema do banco (`lib/db/src/schema/index.ts`)
+- ❌ Não instale novos pacotes npm
+- ❌ Não altere `queryClient.ts` (ele já está correto)
+- ❌ Não altere `lotteryData.ts` do backend (já tem fallback de API corrigido)
+- ❌ Não altere `lottery.ts` das rotas do backend (já está correto)
+
+---
+
+## PROBLEMA 7 — 404 NO REFRESH (SPA no Render)
+
+**Causa raiz:** O Render serve o frontend como site estático. Quando o usuário acessa diretamente uma URL como `/generator` ou `/heat-map` — seja por refresh, link direto ou volta do histórico do browser — o servidor procura um arquivo físico com aquele caminho, não encontra, e retorna 404. O React Router só funciona quando o `index.html` é sempre servido para qualquer rota.
+
+Existem **três camadas** que precisam estar alinhadas ao mesmo tempo. Corrija todas:
+
+---
+
+### 7A — Arquivo `_redirects` (Render CDN)
+
+**Arquivo:** `artifacts/loto-shark/public/_redirects`
+
+Substitua o conteúdo COMPLETO do arquivo por:
+
+```
+/* /index.html 200
+```
+
+Apenas essa linha. Sem espaços extras, sem comentários, sem quebras de linha adicionais.
+
+Esse arquivo precisa estar na pasta `public/` do Vite, que o Vite copia automaticamente para `dist/public/` durante o build. O Render lê esse arquivo e aplica o redirect antes de qualquer outra regra.
+
+---
+
+### 7B — `render.yaml` (regra de rewrite no serviço estático)
+
+**Arquivo:** `render.yaml`
+
+Substitua o arquivo COMPLETO por:
+
+```yaml
+services:
+  # Frontend estático
+  - type: web
+    name: loto-shark-frontend
+    runtime: static
+    buildCommand: cd artifacts/loto-shark && npm install --legacy-peer-deps && npm run build
+    staticPublishPath: artifacts/loto-shark/dist/public
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # API backend
+  - type: web
+    name: loto-shark-api
+    runtime: node
+    buildCommand: cd artifacts/api-server && npm install --legacy-peer-deps && npm run build
+    startCommand: node artifacts/api-server/dist/index.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+```
+
+A chave `headers` com `Cache-Control: no-cache` evita que o browser ou o CDN do Render sirva uma versão em cache do `index.html` antigo após um novo deploy.
+
+---
+
+### 7C — `vite.config.ts` (garantir que `public/` seja copiado corretamente)
+
+**Arquivo:** `artifacts/loto-shark/vite.config.ts`
+
+Localize o bloco `build:` e adicione `publicDir` explícito logo antes de `outDir`:
+
+```typescript
+  build: {
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    emptyOutDir: true,
+    chunkSizeWarningLimit: 600,
+    // ...resto igual
+  },
+```
+
+Adicione a linha `publicDir` no nível raiz do `defineConfig` (fora do `build`), logo após `root`:
+
+```typescript
+  root: path.resolve(import.meta.dirname),
+  publicDir: path.resolve(import.meta.dirname, "public"),  // ← ADICIONAR ESTA LINHA
+  build: {
+```
+
+Isso garante que o Vite sempre copia `public/_redirects` para `dist/public/_redirects` durante o build, mesmo em ambientes onde o `publicDir` padrão não é detectado corretamente.
+
+---
+
+### 7D — Verificar após o build
+
+Após aplicar e rodar o build (`npm run build` dentro de `artifacts/loto-shark`), confirme que o arquivo existe:
+
+```
+artifacts/loto-shark/dist/public/_redirects
+```
+
+Conteúdo esperado:
+```
+/* /index.html 200
+```
+
+Se o arquivo **não estiver** em `dist/public/` após o build, significa que o Vite não está copiando a pasta `public/`. Nesse caso, adicione ao `buildCommand` do `render.yaml` um passo extra de cópia:
+
+```yaml
+    buildCommand: >
+      cd artifacts/loto-shark &&
+      npm install --legacy-peer-deps &&
+      npm run build &&
+      cp public/_redirects dist/public/_redirects
+```
+
+---
+
+### Por que isso resolve o problema
+
+| Camada | O que faz |
+|---|---|
+| `_redirects` | O CDN do Render intercepta ANTES do servidor e redireciona qualquer path para `/index.html` com status 200 |
+| `routes` no `render.yaml` | Fallback no nível do serviço estático caso o `_redirects` não seja lido |
+| `publicDir` no `vite.config.ts` | Garante que o `_redirects` chegue na pasta de output do build |
+| `Cache-Control: no-cache` | Evita que o browser sirva o 404 cacheado após um novo deploy |
+
+Com as três camadas alinhadas, qualquer refresh ou acesso direto a `/generator`, `/heat-map`, `/ai-analysis`, `/results` ou qualquer outra rota do React vai sempre receber o `index.html` e o React Router vai assumir a navegação corretamente.

@@ -44,6 +44,8 @@ const allowedOrigins = [
   /\.replit\.dev$/,
   /\.replit\.app$/,
   /\.repl\.co$/,
+  /\.netlify\.app$/,
+  /\.vercel\.app$/,
 ];
 
 app.use(cors({
