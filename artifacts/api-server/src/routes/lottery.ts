@@ -343,6 +343,38 @@ router.get("/:id/frequency", async (req, res) => {
   }
 });
 
+// POST /api/lotteries/:id/update-frequency
+// Força recálculo das frequências (busca os últimos sorteios e recomputa)
+router.post("/:id/update-frequency", async (req, res) => {
+  const lottery = LOTTERIES.find(l => l.id === req.params.id);
+  if (!lottery) { res.status(404).json({ message: 'Lottery not found' }); return; }
+
+  try {
+    const draws       = await fetchHistoricalDraws(req.params.id, 30);
+    const frequencies = computeFrequencies(lottery.totalNumbers, draws, lottery.startNumber ?? 1);
+
+    const hot  = frequencies.filter(f => f.temperature === 'hot');
+    const cold = frequencies.filter(f => f.temperature === 'cold');
+    const warm = frequencies.filter(f => f.temperature === 'warm');
+
+    res.json({
+      updated: true,
+      frequencies,
+      meta: {
+        lotteryId: lottery.id,
+        totalNumbers: lottery.totalNumbers,
+        drawsAnalyzed: draws.length,
+        topHot:  hot.slice(0, 10).map(f => f.number),
+        topCold: cold.slice(0, 10).map(f => f.number),
+        topWarm: warm.slice(0, 10).map(f => f.number),
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  } catch {
+    res.status(500).json({ message: 'Erro ao atualizar frequências.', updated: false });
+  }
+});
+
 // GET /api/lotteries/:id/history
 router.get("/:id/history", async (req, res) => {
   const lottery = LOTTERIES.find(l => l.id === req.params.id);

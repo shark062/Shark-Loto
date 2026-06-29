@@ -158,15 +158,12 @@ router.get("/providers", requireAuth, (_req: Request, res: Response) => {
   const { providers: list, stats } = listProviders();
   const enriched = list.map((p) => {
     const envKey = getEffectiveApiKey(p.type);
-    const dbProvider = [...providers.values()].find((dp) => dp.id === p.id);
-    const dbKey = dbProvider?.apiKey;
-    const hasDbKey = !!dbKey && dbKey !== "__env__" && dbKey.trim() !== "";
     const hasEnvKey = !!envKey;
     return {
       ...p,
-      hasDbKey,
+      hasDbKey: false,          // chaves são env-only; DB não é mais fonte de API keys
       hasEnvKey,
-      keySource: hasDbKey ? "banco" : hasEnvKey ? "env" : "nenhuma",
+      keySource: hasEnvKey ? "env" : "nenhuma",
     };
   });
   res.json({ providers: enriched, stats });

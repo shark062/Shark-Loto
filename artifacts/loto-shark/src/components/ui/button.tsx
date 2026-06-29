@@ -5,24 +5,27 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-3xl text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-black/20 text-primary-foreground hover:bg-black/20",
+        default:
+          "bg-[rgba(0,255,204,0.12)] text-[#00ffcc] border border-[rgba(0,255,204,0.35)] hover:bg-[rgba(0,255,204,0.22)] hover:border-[rgba(0,255,204,0.6)] hover:shadow-[0_0_14px_rgba(0,255,204,0.25)] active:scale-[0.97]",
         destructive:
-          "bg-black/20 text-destructive-foreground hover:bg-black/20",
+          "bg-[rgba(255,60,60,0.15)] text-red-400 border border-[rgba(255,60,60,0.4)] hover:bg-[rgba(255,60,60,0.25)] hover:shadow-[0_0_14px_rgba(255,60,60,0.25)] active:scale-[0.97]",
         outline:
-          "border border-input bg-background hover:bg-black/20 hover:text-accent-foreground",
+          "bg-[rgba(18,18,42,0.80)] text-[#00ffcc] border border-[rgba(0,255,204,0.35)] hover:bg-[rgba(0,255,204,0.12)] hover:border-[rgba(0,255,204,0.6)] hover:shadow-[0_0_12px_rgba(0,255,204,0.2)] active:scale-[0.97]",
         secondary:
-          "bg-black/20 text-secondary-foreground hover:bg-black/20",
-        ghost: "hover:bg-black/20 hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-[rgba(139,92,246,0.15)] text-purple-300 border border-[rgba(139,92,246,0.35)] hover:bg-[rgba(139,92,246,0.25)] hover:shadow-[0_0_14px_rgba(139,92,246,0.25)] active:scale-[0.97]",
+        ghost:
+          "text-[#00ffcc]/70 hover:bg-[rgba(0,255,204,0.08)] hover:text-[#00ffcc] active:scale-[0.97]",
+        link:
+          "text-[#00ffcc] underline-offset-4 hover:underline hover:text-[#00ffcc]/80",
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
+        sm: "h-9 rounded-lg px-3 text-xs",
+        lg: "h-11 px-8 text-base",
         icon: "h-10 w-10",
       },
     },

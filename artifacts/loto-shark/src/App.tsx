@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useEffect } from "react";
 import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
+import { queryClient, resolveApiUrl } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
@@ -55,17 +55,14 @@ function Router() {
 
 function useKeepAlive() {
   useEffect(() => {
-    // Importação dinâmica para evitar ciclos; resolveApiUrl já detecta o host correto
-    import("@/lib/queryClient").then(({ resolveApiUrl }) => {
-      const apiUrl = resolveApiUrl("/api/health");
-      // Só faz keep-alive se a URL for absoluta (ou seja, há um servidor separado)
-      if (!apiUrl.startsWith("http")) return;
-      const INTERVAL_MS = 12 * 60 * 1000;
-      const ping = () => fetch(apiUrl, { method: "GET", cache: "no-store" }).catch(() => {});
-      ping();
-      const timer = setInterval(ping, INTERVAL_MS);
-      return () => clearInterval(timer);
-    });
+    const apiUrl = resolveApiUrl("/api/health");
+    // Só faz keep-alive se a URL for absoluta (servidor externo separado)
+    if (!apiUrl.startsWith("http")) return;
+    const INTERVAL_MS = 12 * 60 * 1000;
+    const ping = () => fetch(apiUrl, { method: "GET", cache: "no-store" }).catch(() => {});
+    ping();
+    const timer = setInterval(ping, INTERVAL_MS);
+    return () => clearInterval(timer);
   }, []);
 }
 

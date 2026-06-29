@@ -1,2 +1,3 @@
 - [Loto-Shark workflows](loto-shark-workflows.md) — Preview funciona na porta 5000 via workflow "Start application"; artifacts usam porta 23571. Ambos precisam rodar juntos.
+- [Render env vars management](loto-shark-render-env.md) — PUT env-vars é full replace; Render mascara algumas keys sensíveis no GET; GROQ e OPENAI precisam ser re-adicionadas pelo usuário.
 - [PIX payload CRC16](loto-shark-pix.md) — Payload PIX deve ter CRC16-CCITT recalculado a cada mudança de nome/dados.

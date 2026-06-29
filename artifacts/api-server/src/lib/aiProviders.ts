@@ -77,19 +77,12 @@ export function getEffectiveApiKey(type: string): string | null {
 }
 
 /**
- * Retorna a chave real de um provider:
- * - ENV sempre tem prioridade sobre o banco
- * - Banco é fallback quando ENV não está disponível
+ * Retorna a chave real de um provider.
+ * APENAS variáveis de ambiente — banco de dados não é mais usado como fonte de chave.
+ * Isso evita conflito entre chaves antigas no banco e chaves atuais do servidor.
  */
 export function getProviderApiKey(provider: ProviderConfig): string | null {
-  // 1ª prioridade: ENV
-  const envKey = getEffectiveApiKey(provider.type);
-  if (envKey) return envKey;
-  // 2ª prioridade: banco (se não for placeholder)
-  if (provider.apiKey && provider.apiKey !== "__env__" && provider.apiKey.trim() !== "") {
-    return provider.apiKey.trim();
-  }
-  return null;
+  return getEffectiveApiKey(provider.type);
 }
 
 // ─── Default URLs e modelos ───────────────────────────────────────────────────
@@ -113,7 +106,7 @@ const DEFAULT_MODELS: Record<string, string> = {
   deepseek:   "deepseek-chat",
   groq:       "llama-3.3-70b-versatile",
   mistral:    "mistral-small-latest",
-  cohere:     "command-r",
+  cohere:     "command-a-03-2025",
   openrouter: "meta-llama/llama-3.2-3b-instruct:free",
   together:   "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
 };
