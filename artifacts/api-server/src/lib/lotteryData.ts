@@ -99,6 +99,20 @@ export async function fetchLatestDraw(lotteryId: string): Promise<any | null> {
   }
 
   if (data) {
+    // Merge com dados estáticos quando a API retorna resposta incompleta
+    // (ex: mirrors da Vercel retornam dataProximoConcurso mas não valorEstimadoProximoConcurso)
+    const staticFb = STATIC_DRAW_FALLBACKS[lotteryId];
+    if (staticFb) {
+      if (!data.valorEstimadoProximoConcurso || Number(data.valorEstimadoProximoConcurso) === 0) {
+        data.valorEstimadoProximoConcurso = staticFb.valorEstimadoProximoConcurso;
+      }
+      if (!data.numeroConcursoProximo) {
+        data.numeroConcursoProximo = staticFb.numeroConcursoProximo;
+      }
+      if (!data.dataProximoConcurso) {
+        data.dataProximoConcurso = staticFb.dataProximoConcurso;
+      }
+    }
     latestCache[lotteryId] = { data, fetchedAt: Date.now() };
     return data;
   }
