@@ -53,17 +53,19 @@ function Router() {
   );
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
-
 function useKeepAlive() {
   useEffect(() => {
-    if (!API_BASE) return;
-    const INTERVAL_MS = 12 * 60 * 1000;
-    const ping = () =>
-      fetch(`${API_BASE}/api/health`, { method: "GET", cache: "no-store" }).catch(() => {});
-    ping();
-    const timer = setInterval(ping, INTERVAL_MS);
-    return () => clearInterval(timer);
+    // Importação dinâmica para evitar ciclos; resolveApiUrl já detecta o host correto
+    import("@/lib/queryClient").then(({ resolveApiUrl }) => {
+      const apiUrl = resolveApiUrl("/api/health");
+      // Só faz keep-alive se a URL for absoluta (ou seja, há um servidor separado)
+      if (!apiUrl.startsWith("http")) return;
+      const INTERVAL_MS = 12 * 60 * 1000;
+      const ping = () => fetch(apiUrl, { method: "GET", cache: "no-store" }).catch(() => {});
+      ping();
+      const timer = setInterval(ping, INTERVAL_MS);
+      return () => clearInterval(timer);
+    });
   }, []);
 }
 

@@ -30,14 +30,14 @@ function formatBRL(value: string | number | null | undefined): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 }).format(n);
 }
 
-// CORREÇÃO: usa resolveApiUrl para honrar VITE_API_BASE_URL no Render
 import { resolveApiUrl } from "@/lib/queryClient";
 
 async function apiFetch<T>(path: string): Promise<T | null> {
   try {
-    const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
-    const credentials: RequestCredentials = API_BASE ? "omit" : "include";
-    const res = await fetch(resolveApiUrl(path), { credentials });
+    const resolved = resolveApiUrl(path);
+    // Se a URL foi reescrita para absoluta, há servidor externo → omit credentials
+    const credentials: RequestCredentials = resolved !== path ? "omit" : "include";
+    const res = await fetch(resolved, { credentials });
     if (res.ok) return (await res.json()) as T;
   } catch {
     // falha de rede — retorna null para fallback

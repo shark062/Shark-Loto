@@ -1,15 +1,37 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 /**
- * URL base da API externa configurada via VITE_API_BASE_URL.
- * Se não definida, usa a API local (comportamento padrão).
- * Ex.: https://loto-shark-api-zcni.onrender.com
+ * URL base da API.
+ *
+ * Resolução em ordem de prioridade:
+ *  1. VITE_API_BASE_URL — definida em build time (Render env var, .env, etc.)
+ *  2. Detecção automática por hostname — mapeia o domínio do frontend para o
+ *     domínio da API correspondente no Render (sem precisar de env var).
+ *  3. "" — fallback para desenvolvimento local (usa o proxy Vite /api → :8080)
  */
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
+const HOSTNAME_TO_API: Record<string, string> = {
+  "loto-shark-app.onrender.com": "https://loto-shark-api-zcni.onrender.com",
+};
+
+function resolveApiBase(): string {
+  // 1. Build-time env var (maior prioridade)
+  const envBase = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
+  if (envBase) return envBase.replace(/\/$/, "");
+
+  // 2. Runtime hostname detection (funciona em produção sem env var)
+  if (typeof window !== "undefined") {
+    const mapped = HOSTNAME_TO_API[window.location.hostname];
+    if (mapped) return mapped;
+  }
+
+  // 3. Dev local — proxy Vite encaminha /api → localhost:8080
+  return "";
+}
+
+const API_BASE = resolveApiBase();
 
 /**
  * Resolve um caminho de API relativo para a URL completa.
- * Se VITE_API_BASE_URL estiver configurada, prefixa com o servidor externo.
  */
 export function resolveApiUrl(url: string): string {
   if (API_BASE && url.startsWith("/")) {
@@ -19,18 +41,14 @@ export function resolveApiUrl(url: string): string {
 }
 
 /**
- * Retorna as credenciais corretas:
- * - "include" para API local (mesmo domínio / proxy Replit)
- * - "omit"    para API externa (CORS com wildcard não aceita credentials)
+ * Credenciais: omit para API externa (CORS wildcard não aceita credentials).
  */
 function credentialsMode(url: string): RequestCredentials {
   return API_BASE && url.startsWith("/") ? "omit" : "include";
 }
 
 /**
- * Substituto para fetch() que resolve URLs de API automaticamente
- * e lida com as credenciais corretas conforme o destino.
- * Use em todos os lugares que chamam fetch('/api/...') diretamente.
+ * Substituto para fetch() que resolve URLs de API automaticamente.
  */
 export function apiFetch(url: string, options?: RequestInit): Promise<Response> {
   const resolved = resolveApiUrl(url);
@@ -69,7 +87,6 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // queryKey é um array; join com "/" forma o path completo, ex: "/api/lotteries/megasena/draws"
     const path = queryKey.join("/") as string;
     const res = await fetch(resolveApiUrl(path), {
       credentials: credentialsMode(path),
