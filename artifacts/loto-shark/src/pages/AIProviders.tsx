@@ -53,8 +53,10 @@ export default function AIProviders() {
   const [evolutionLog, setEvolutionLog] = useState<EvolutionEntry[]>([]);
   const [stats, setStats]               = useState<any>(null);
   const [showLog, setShowLog]           = useState(false);
+  const [loading, setLoading]           = useState(false);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [provRes, logRes] = await Promise.all([
         apiFetch("/api/ai-providers"),
@@ -67,6 +69,8 @@ export default function AIProviders() {
       setEvolutionLog(logData.log || []);
     } catch (e) {
       console.error("Erro ao carregar providers:", e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,10 +98,11 @@ export default function AIProviders() {
           </p>
           <button
             onClick={fetchData}
-            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-            title="Atualizar"
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 font-medium text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            {loading ? "Atualizando…" : "Atualizar"}
           </button>
         </div>
 
