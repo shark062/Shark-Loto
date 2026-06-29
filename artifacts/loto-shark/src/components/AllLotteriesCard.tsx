@@ -46,25 +46,21 @@ function formatPrize(value: string | number | undefined): string {
 const LOTTERY_CONFIG: Record<string, {
   emoji: string;
   prizeColor: string;
-  accentColor: string;
-  borderActive: string;
+  glowColor: string;
 }> = {
-  megasena:   { emoji: "💎", prizeColor: "text-emerald-400", accentColor: "bg-emerald-500/10 border-emerald-500/25 text-emerald-400", borderActive: "border-emerald-500/40" },
-  lotofacil:  { emoji: "⭐", prizeColor: "text-purple-400",  accentColor: "bg-purple-500/10 border-purple-500/25 text-purple-400",  borderActive: "border-purple-500/40"  },
-  quina:      { emoji: "🪙", prizeColor: "text-yellow-400",  accentColor: "bg-yellow-500/10 border-yellow-500/25 text-yellow-400",  borderActive: "border-yellow-500/40"  },
-  lotomania:  { emoji: "♾️", prizeColor: "text-pink-400",    accentColor: "bg-pink-500/10 border-pink-500/25 text-pink-400",        borderActive: "border-pink-500/40"    },
-  duplasena:  { emoji: "👑", prizeColor: "text-orange-400",  accentColor: "bg-orange-500/10 border-orange-500/25 text-orange-400",  borderActive: "border-orange-500/40"  },
-  timemania:  { emoji: "⚽", prizeColor: "text-rose-400",    accentColor: "bg-rose-500/10 border-rose-500/25 text-rose-400",        borderActive: "border-rose-500/40"    },
-  diadesorte: { emoji: "🍀", prizeColor: "text-green-400",   accentColor: "bg-green-500/10 border-green-500/25 text-green-400",    borderActive: "border-green-500/40"   },
-  supersete:  { emoji: "7️⃣", prizeColor: "text-red-400",    accentColor: "bg-red-500/10 border-red-500/25 text-red-400",           borderActive: "border-red-500/40"     },
+  megasena:   { emoji: "💎", prizeColor: "#34d399", glowColor: "rgba(52,211,153,0.3)"  },
+  lotofacil:  { emoji: "⭐", prizeColor: "#c084fc", glowColor: "rgba(192,132,252,0.3)" },
+  quina:      { emoji: "🪙", prizeColor: "#fbbf24", glowColor: "rgba(251,191,36,0.3)"  },
+  lotomania:  { emoji: "♾️", prizeColor: "#f472b6", glowColor: "rgba(244,114,182,0.3)" },
+  duplasena:  { emoji: "👑", prizeColor: "#fb923c", glowColor: "rgba(251,146,60,0.3)"  },
+  timemania:  { emoji: "⚽", prizeColor: "#f87171", glowColor: "rgba(248,113,113,0.3)" },
+  diadesorte: { emoji: "🍀", prizeColor: "#4ade80", glowColor: "rgba(74,222,128,0.3)"  },
+  supersete:  { emoji: "7️⃣", prizeColor: "#ff6b6b", glowColor: "rgba(255,107,107,0.3)"},
 };
 
 function getCfg(id: string) {
   return LOTTERY_CONFIG[id] ?? {
-    emoji: "🎰",
-    prizeColor: "text-primary",
-    accentColor: "bg-primary/10 border-primary/25 text-primary",
-    borderActive: "border-primary/40",
+    emoji: "🎰", prizeColor: "#a78bfa", glowColor: "rgba(167,139,250,0.3)",
   };
 }
 
@@ -73,16 +69,20 @@ function SkeletonCard() {
   return (
     <div
       className="rounded-2xl animate-pulse p-5 flex flex-col gap-3"
-      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+      style={{
+        background: "rgba(5,10,30,0.75)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        backdropFilter: "blur(12px)",
+      }}
     >
       <div className="flex items-center gap-3">
         <div className="w-11 h-11 rounded-xl bg-white/10" />
         <div className="flex-1 space-y-2">
-          <div className="h-4 bg-white/10 rounded w-28" />
+          <div className="h-4 bg-white/15 rounded w-28" />
           <div className="h-3 bg-white/10 rounded w-36" />
         </div>
       </div>
-      <div className="h-8 bg-white/10 rounded-lg w-full" />
+      <div className="h-16 bg-white/10 rounded-xl w-full" />
       <div className="h-3 bg-white/10 rounded w-32" />
       <div className="flex gap-2">
         <div className="h-11 bg-white/10 rounded-xl flex-1" />
@@ -100,7 +100,7 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
   const cfg = getCfg(lottery.id);
 
   const drawDate = (() => {
-    const apiDate  = nextDraw?.drawDate;
+    const apiDate   = nextDraw?.drawDate;
     const localDate = getLocalDrawDate(lottery.id) ?? undefined;
     if (apiDate && new Date(apiDate) > new Date()) return apiDate;
     return localDate;
@@ -121,20 +121,27 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
     <div
       className="rounded-2xl transition-all duration-200"
       style={{
-        background: "rgba(255,255,255,0.05)",
+        background: isLive
+          ? "rgba(30,5,5,0.82)"
+          : "rgba(5,10,30,0.78)",
         border: isLive
-          ? "1px solid rgba(239,68,68,0.5)"
-          : "1px solid rgba(255,255,255,0.1)",
+          ? "1px solid rgba(239,68,68,0.55)"
+          : "1px solid rgba(255,255,255,0.15)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
       }}
       data-testid={`lottery-card-${lottery.id}`}
     >
-      {/* ── Topo: identidade ────────────────────────────────────────────── */}
+      {/* ── Topo: identidade ──────────────────────────────────────────── */}
       <div className="p-4 pb-3">
         <div className="flex items-center gap-3 mb-3">
           {/* Emoji avatar */}
           <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
-            style={{ background: "rgba(255,255,255,0.08)" }}
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
+            style={{
+              background: "rgba(255,255,255,0.1)",
+              border: "1px solid rgba(255,255,255,0.15)",
+            }}
           >
             {cfg.emoji}
           </div>
@@ -142,12 +149,13 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
           {/* Nome + regra */}
           <div className="flex-1 min-w-0">
             <h3
-              className="text-base font-bold text-white leading-tight truncate"
+              className="text-base font-bold leading-tight truncate"
+              style={{ color: "#ffffff" }}
               data-testid={`lottery-name-${lottery.id}`}
             >
               {lottery.displayName}
             </h3>
-            <p className="text-xs text-white/50 mt-0.5">
+            <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "0.72rem" }} className="mt-0.5">
               {lottery.minNumbers}–{lottery.maxNumbers} números&nbsp;·&nbsp;
               {lottery.totalNumbers} disponíveis
             </p>
@@ -155,36 +163,42 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
 
           {/* Badge AO VIVO */}
           {isLive && (
-            <div className="flex items-center gap-1 bg-red-500/15 border border-red-500/40 rounded-full px-2.5 py-1 shrink-0">
-              <Radio className="h-3 w-3 text-red-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-red-400 tracking-wider uppercase">Live</span>
+            <div className="flex items-center gap-1 rounded-full px-2.5 py-1 shrink-0"
+              style={{ background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.5)" }}>
+              <Radio className="h-3 w-3 animate-pulse" style={{ color: "#f87171" }} />
+              <span style={{ color: "#f87171", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.08em" }}>LIVE</span>
             </div>
           )}
         </div>
 
-        {/* ── Prêmio ──────────────────────────────────────────────────── */}
+        {/* ── Prêmio ────────────────────────────────────────────────── */}
         <div
           className="rounded-xl px-4 py-3 mb-3"
-          style={{ background: "rgba(255,255,255,0.05)" }}
+          style={{
+            background: hasPrize ? `rgba(5,12,35,0.7)` : "rgba(255,255,255,0.05)",
+            border: hasPrize ? `1px solid ${cfg.glowColor}` : "1px solid rgba(255,255,255,0.08)",
+          }}
         >
-          <p className="text-[10px] text-white/40 uppercase tracking-widest mb-1 font-medium">
+          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "4px", fontWeight: 500 }}>
             Prêmio Estimado
           </p>
           <p
-            className={`text-2xl font-black tracking-tight leading-none ${
-              hasPrize ? cfg.prizeColor : "text-white/30"
-            }`}
+            className="font-black tracking-tight leading-none"
+            style={{
+              color: hasPrize ? cfg.prizeColor : "rgba(255,255,255,0.35)",
+              fontSize: hasPrize ? "1.35rem" : "0.95rem",
+              textShadow: hasPrize ? `0 0 20px ${cfg.glowColor}` : "none",
+            }}
             data-testid={`lottery-prize-${lottery.id}`}
           >
             {hasPrize ? prize : "Consulte a Caixa"}
           </p>
         </div>
 
-        {/* ── Concurso + Countdown ─────────────────────────────────────── */}
-        <div className="flex items-center justify-between">
-          {/* Número do concurso */}
+        {/* ── Concurso + Countdown ──────────────────────────────────── */}
+        <div className="flex items-center justify-between min-h-[20px]">
           {nextDraw?.contestNumber ? (
-            <div className="flex items-center gap-1.5 text-xs text-white/50">
+            <div className="flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.72rem" }}>
               <Calendar className="h-3.5 w-3.5 shrink-0" />
               <span>Concurso #{nextDraw.contestNumber}</span>
             </div>
@@ -192,15 +206,17 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
             <div />
           )}
 
-          {/* Countdown */}
           {isLive ? (
-            <span className="text-xs font-bold text-red-400 animate-pulse">
+            <span className="animate-pulse font-bold" style={{ color: "#f87171", fontSize: "0.72rem" }}>
               ● Sorteando agora
             </span>
           ) : hasCountdown && timeLeft ? (
-            <div className="flex items-center gap-1.5 text-xs">
-              <Clock className="h-3.5 w-3.5 text-white/40 shrink-0" />
-              <span className="font-mono font-semibold text-yellow-400 tabular-nums">
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 shrink-0" style={{ color: "rgba(255,255,255,0.45)" }} />
+              <span
+                className="font-mono font-bold tabular-nums"
+                style={{ color: "#fbbf24", fontSize: "0.72rem" }}
+              >
                 {String(timeLeft.days).padStart(2, "0")}d&nbsp;
                 {String(timeLeft.hours).padStart(2, "0")}h&nbsp;
                 {String(timeLeft.minutes).padStart(2, "0")}m&nbsp;
@@ -211,52 +227,33 @@ function SingleLotteryCard({ lottery }: { lottery: LotteryType }) {
         </div>
       </div>
 
-      {/* ── Ações ───────────────────────────────────────────────────────── */}
-      <div className="px-4 pb-4 pt-0 flex gap-2">
-        {/* Gerar */}
-        <button
-          className="flex-1 h-12 flex flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.75)",
-          }}
-          onClick={() => setLocation(`/generator?lottery=${lottery.id}`)}
-          data-testid={`quick-generate-${lottery.id}`}
-        >
-          <Zap className="h-4 w-4" />
-          <span>Gerar</span>
-        </button>
-
-        {/* Mapa */}
-        <button
-          className="flex-1 h-12 flex flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.75)",
-          }}
-          onClick={() => setLocation(`/heat-map?lottery=${lottery.id}`)}
-          data-testid={`quick-heatmap-${lottery.id}`}
-        >
-          <Target className="h-4 w-4" />
-          <span>Mapa</span>
-        </button>
-
-        {/* Carrinho */}
-        <button
-          className="flex-1 h-12 flex flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.75)",
-          }}
-          onClick={() => setLocation(`/manual-picker?lottery=${lottery.id}`)}
-          data-testid={`quick-cart-${lottery.id}`}
-        >
-          <ShoppingCart className="h-4 w-4" />
-          <span>Carrinho</span>
-        </button>
+      {/* ── Ações ─────────────────────────────────────────────────────── */}
+      <div
+        className="px-4 pb-4 pt-0 flex gap-2"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "12px", marginTop: "2px" }}
+      >
+        {[
+          { icon: <Zap className="h-4 w-4" />, label: "Gerar",     path: `/generator?lottery=${lottery.id}`,     testId: `quick-generate-${lottery.id}` },
+          { icon: <Target className="h-4 w-4" />, label: "Mapa",   path: `/heat-map?lottery=${lottery.id}`,      testId: `quick-heatmap-${lottery.id}` },
+          { icon: <ShoppingCart className="h-4 w-4" />, label: "Carrinho", path: `/manual-picker?lottery=${lottery.id}`, testId: `quick-cart-${lottery.id}` },
+        ].map(({ icon, label, path, testId }) => (
+          <button
+            key={label}
+            className="flex-1 h-11 flex flex-col items-center justify-center gap-0.5 rounded-xl transition-all active:scale-95"
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.14)",
+              color: "rgba(255,255,255,0.85)",
+              fontSize: "0.7rem",
+              fontWeight: 600,
+            }}
+            onClick={() => setLocation(path)}
+            data-testid={testId}
+          >
+            {icon}
+            <span>{label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -268,7 +265,7 @@ export default function AllLotteriesCard() {
 
   if (lotteriesLoading) {
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
       </div>
     );
@@ -278,13 +275,17 @@ export default function AllLotteriesCard() {
     return (
       <div
         className="rounded-2xl p-8 text-center"
-        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
+        style={{
+          background: "rgba(5,10,30,0.75)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          backdropFilter: "blur(12px)",
+        }}
       >
-        <Trophy className="h-8 w-8 mx-auto mb-3 text-white/20" />
-        <p className="text-sm text-white/50 mb-4">Não foi possível carregar as modalidades</p>
+        <Trophy className="h-8 w-8 mx-auto mb-3" style={{ color: "rgba(255,255,255,0.3)" }} />
+        <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.6)" }}>Não foi possível carregar as modalidades</p>
         <button
           className="px-4 py-2 rounded-xl text-sm font-medium"
-          style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", color: "white" }}
+          style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)", color: "white" }}
           onClick={() => window.location.reload()}
         >
           Tentar Novamente
@@ -300,24 +301,32 @@ export default function AllLotteriesCard() {
         <div className="flex items-center gap-2.5">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)" }}
+            style={{ background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)" }}
           >
-            <Trophy className="h-4 w-4 text-yellow-400" />
+            <Trophy className="h-4 w-4" style={{ color: "#fbbf24" }} />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white leading-tight">Todas as Modalidades</h2>
-            <p className="text-[10px] text-white/40 mt-0.5">Próximos sorteios · IA integrada</p>
+            <h2 className="text-sm font-bold" style={{ color: "#ffffff" }}>Todas as Modalidades</h2>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.65rem" }} className="mt-0.5">
+              Próximos sorteios · IA integrada
+            </p>
           </div>
         </div>
         <span
-          className="text-[10px] font-medium px-2.5 py-1 rounded-full"
-          style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)" }}
+          className="rounded-full px-2.5 py-1"
+          style={{
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.14)",
+            color: "rgba(255,255,255,0.6)",
+            fontSize: "0.65rem",
+            fontWeight: 500,
+          }}
         >
           {lotteryTypes.length} modalidades
         </span>
       </div>
 
-      {/* Grid responsivo: 1 col mobile → 2 col tablet → 3 col desktop */}
+      {/* Grid responsivo */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {lotteryTypes.map((lottery) => (
           <SingleLotteryCard key={lottery.id} lottery={lottery} />

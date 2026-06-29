@@ -9,71 +9,7 @@ interface CyberpunkEffectsProps {
   className?: string;
 }
 
-// Componente de efeito Matrix Rain
-const MatrixRain = ({ active }: { active: boolean }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    if (!active || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789SHARK💎⭐🪙';
-    const charArray = chars.split('');
-    const fontSize = 14;
-    const columns = canvas.width / fontSize;
-    const drops: number[] = [];
-
-    for (let x = 0; x < columns; x++) {
-      drops[x] = 1;
-    }
-
-    const draw = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
-      ctx.font = fontSize + 'px monospace';
-
-      for (let i = 0; i < drops.length; i++) {
-        const text = charArray[Math.floor(Math.random() * charArray.length)];
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-        drops[i]++;
-      }
-    };
-
-    const interval = setInterval(draw, 35);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', resizeCanvas);
-    };
-  }, [active]);
-
-  if (!active) return null;
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-10 opacity-20"
-      style={{ background: 'transparent' }}
-    />
-  );
-};
+// MatrixRain removido a pedido do usuário
 
 // Componente de linhas de scan
 const ScanLines = ({ active }: { active: boolean }) => {
@@ -155,14 +91,12 @@ export default function CyberpunkEffects({
     switch (level) {
       case 'high':
         return {
-          matrixActive: matrixRain,
           scanActive: scanLines,
           glitchActive: glitchActive,
           particleCount: 100
         };
       case 'medium':
         return {
-          matrixActive: matrixRain && Math.random() > 0.3,
           scanActive: scanLines,
           glitchActive: glitchActive && Math.random() > 0.7,
           particleCount: 50
@@ -170,7 +104,6 @@ export default function CyberpunkEffects({
       case 'low':
       default:
         return {
-          matrixActive: false,
           scanActive: scanLines && Math.random() > 0.5,
           glitchActive: false,
           particleCount: 20
@@ -182,7 +115,6 @@ export default function CyberpunkEffects({
 
   return (
     <div className={className}>
-      <MatrixRain active={settings.matrixActive} />
       <ScanLines active={settings.scanActive} />
       <GlitchOverlay active={settings.glitchActive} />
     </div>
