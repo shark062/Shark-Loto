@@ -149,14 +149,23 @@ export default function AIProviders() {
           <div className="space-y-3">
             {providers.map((p) => {
               const { label, color } = info(p.type);
+              // Só mostra erro se o provider estiver desativado OU se todas as chamadas falharam
+              const hasRealError = !p.enabled || (p.totalCalls > 0 && p.successRate === 0);
+              // Provider está operacional: ativo e sem falha total
+              const isOperational = p.enabled && !(p.totalCalls > 0 && p.successRate === 0);
               return (
                 <NeonCard
                   key={p.id}
                   className={`border ${p.enabled ? "border-white/10" : "border-white/5 opacity-50"}`}
                 >
                   <div className="flex items-center gap-3">
-                    {/* Status dot */}
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${p.enabled ? "bg-green-400" : "bg-gray-600"}`} />
+                    {/* Status dot com pulso se operacional */}
+                    <div className="relative shrink-0">
+                      <div className={`w-2.5 h-2.5 rounded-full ${isOperational ? "bg-green-400" : p.enabled ? "bg-yellow-400" : "bg-gray-600"}`} />
+                      {isOperational && (
+                        <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-40" />
+                      )}
+                    </div>
 
                     {/* Info principal */}
                     <div className="flex-1 min-w-0">
@@ -170,6 +179,11 @@ export default function AIProviders() {
                             ⭐ Principal
                           </span>
                         )}
+                        {isOperational && (
+                          <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
+                            ✓ Funcionando
+                          </span>
+                        )}
                         {!p.enabled && (
                           <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">
                             Inativo
@@ -178,12 +192,13 @@ export default function AIProviders() {
                       </div>
                       <div className="text-xs text-gray-500 font-mono mb-1">{p.model}</div>
                       <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
-                        <span>🎯 {Math.round(p.successRate * 100)}% sucesso</span>
-                        <span>⚡ {Math.round(p.avgLatencyMs)}ms</span>
+                        {p.totalCalls > 0 && <span>🎯 {Math.round(p.successRate * 100)}% sucesso</span>}
+                        {p.avgLatencyMs > 0 && <span>⚡ {Math.round(p.avgLatencyMs)}ms</span>}
                         <span>📡 {p.totalCalls} chamadas</span>
                         {p.priority && <span>🏆 #{p.priority}</span>}
                       </div>
-                      {p.lastError && (
+                      {/* Só exibe erro se o provider estiver realmente com problema */}
+                      {hasRealError && p.lastError && (
                         <div className="text-[10px] text-red-400 mt-1 truncate">
                           Último erro: {p.lastError}
                         </div>
@@ -192,9 +207,11 @@ export default function AIProviders() {
 
                     {/* Ícone de status */}
                     <div className="shrink-0">
-                      {p.enabled
+                      {isOperational
                         ? <CheckCircle className="w-4 h-4 text-green-400" />
-                        : <XCircle className="w-4 h-4 text-red-400" />
+                        : p.enabled
+                          ? <CheckCircle className="w-4 h-4 text-yellow-400" />
+                          : <XCircle className="w-4 h-4 text-red-400" />
                       }
                     </div>
                   </div>

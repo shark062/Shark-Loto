@@ -189,7 +189,7 @@ async function persistProvider(p: ProviderConfig): Promise<void> {
         successCalls: p.successCalls,
         avgLatencyMs: String(p.avgLatencyMs),
         lastUsed: p.lastUsed ?? undefined,
-        lastError: p.lastError ?? undefined,
+        lastError: p.lastError,
         updatedAt: new Date(),
       },
     });
@@ -511,10 +511,19 @@ export async function initDefaultProviders(): Promise<void> {
     if (!existing) {
       await addProvider({ type: ep.type, name: ep.name, apiKey: envKey ?? "__env__" });
       added++;
-    } else if (envKey && (existing.apiKey === "__env__" || existing.apiKey === "" || !existing.apiKey)) {
-      existing.apiKey = envKey;
-      await persistProvider(existing);
-      synced++;
+    } else {
+      let changed = false;
+      if (envKey && (existing.apiKey === "__env__" || existing.apiKey === "" || !existing.apiKey)) {
+        existing.apiKey = envKey;
+        changed = true;
+        synced++;
+      }
+      // Se o provider tem chave válida e ainda carrega um lastError antigo, limpa
+      if (envKey && existing.lastError) {
+        existing.lastError = null;
+        changed = true;
+      }
+      if (changed) await persistProvider(existing);
     }
 
     if (envKey) withKey++;
