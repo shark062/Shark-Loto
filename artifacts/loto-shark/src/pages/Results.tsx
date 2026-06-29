@@ -593,12 +593,12 @@ export default function Results() {
           <div className="flex justify-center mt-3 gap-2 flex-wrap">
             {/* Menu de exportar PDF */}
             <div className="relative" ref={pdfMenuRef}>
-              <Button
+              <button
                 onClick={() => setPdfMenuOpen(v => !v)}
-                className="bg-primary hover:bg-primary/80 text-black flex items-center gap-2 text-xs sm:text-sm"
+                className="sk-btn-primary text-xs sm:text-sm"
               >
                 <Download className="h-4 w-4" /> Exportar PDF ▾
-              </Button>
+              </button>
               {pdfMenuOpen && (
                 <div
                   className="absolute left-0 mt-1 w-52 rounded-xl border border-white/10 bg-black/90 backdrop-blur-md shadow-xl z-50 overflow-hidden"
@@ -628,27 +628,26 @@ export default function Results() {
               )}
             </div>
 
-            <Button
-              variant="outline"
+            <button
               onClick={handleClearAllGames}
               disabled={clearingGames || gamesList.length === 0}
-              className="border-red-500/50 text-red-400 hover:bg-red-500/10 flex items-center gap-2 text-xs sm:text-sm"
+              className="sk-btn-outline text-xs sm:text-sm border-red-500/50 text-red-400 hover:bg-red-500/10"
             >
               <XCircle className="h-4 w-4" />
               {clearingGames ? 'Removendo...' : 'Limpar Jogos'}
-            </Button>
+            </button>
           </div>
         </div>
 
         {/* Cards de estatísticas */}
         <div className="grid grid-cols-2 gap-2 mb-5">
           {[
-            { label: "Total de Jogos", val: userStats?.totalGames ?? 0,     icon: Trophy,    color: "text-primary",    bg: "bg-primary/10",     border: "border-primary/20"     },
-            { label: "Premiados",      val: userStats?.wins ?? 0,            icon: Medal,     color: "text-neon-green", bg: "bg-green-500/10",   border: "border-green-500/20"   },
-            { label: "Taxa de Acerto", val: `${userStats?.accuracy || 0}%`,  icon: BarChart3, color: "text-accent",     bg: "bg-accent/10",      border: "border-accent/20"      },
-            { label: "Total Ganho",    val: `R$ ${totalPrizeWon.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: DollarSign, color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20" },
+            { label: "Total de Jogos", val: userStats?.totalGames ?? 0,     icon: Trophy,    color: "text-primary",    bg: "bg-primary/10"     },
+            { label: "Premiados",      val: userStats?.wins ?? 0,            icon: Medal,     color: "text-neon-green", bg: "bg-green-500/10"   },
+            { label: "Taxa de Acerto", val: `${userStats?.accuracy || 0}%`,  icon: BarChart3, color: "text-accent",     bg: "bg-accent/10"      },
+            { label: "Total Ganho",    val: `R$ ${totalPrizeWon.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: DollarSign, color: "text-yellow-400", bg: "bg-yellow-500/10" },
           ].map((stat, i) => (
-            <Card key={i}>
+            <Card key={i} className="sk-card">
               <CardContent className="p-2 sm:p-3 flex flex-col items-center text-center">
                 <div className={`w-7 h-7 sm:w-8 sm:h-8 ${stat.bg} rounded-lg flex items-center justify-center mb-1.5`}>
                   <stat.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${stat.color}`} />
