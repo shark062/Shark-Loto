@@ -71,7 +71,6 @@ externalPort = 8080
 [userenv]
 
 [userenv.shared]
-RENDER_API_URL = "https://loto-shark-api-zcni.onrender.com"
 
 [userenv.development]
 
