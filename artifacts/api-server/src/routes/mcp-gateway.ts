@@ -476,7 +476,7 @@ router.get("/health", (_req: Request, res: Response) => {
 // ── GET /api/mcp/data/:lotteryId — endpoint de dados sem LLM ─────────────────
 
 router.get("/data/:lotteryId", async (req: Request, res: Response) => {
-  const { lotteryId } = req.params;
+  const lotteryId = req.params.lotteryId as string;
   const limit = Math.min(parseInt(req.query.limit as string) || 30, 100);
 
   if (!LOTTERY_RULES[lotteryId]) {

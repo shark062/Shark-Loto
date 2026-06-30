@@ -55,13 +55,15 @@ export default function AdvancedDashboard() {
   // 📊 Métricas de qualidade em tempo real
   const { data: qualityMetrics, isLoading: loadingMetrics } = useQuery({
     queryKey: ['/api/quality/metrics'],
-    refetchInterval: 30000, // Atualizar a cada 30 segundos
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
   });
 
   // 🧠 Insights de IA
   const { data: aiInsights, isLoading: loadingInsights } = useQuery({
     queryKey: ['/api/ai/insights'],
-    refetchInterval: 60000, // Atualizar a cada 1 minuto
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
   });
 
   // 🏆 Estatísticas de performance

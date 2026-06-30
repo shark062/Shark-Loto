@@ -172,7 +172,7 @@ router.get("/providers", requireAuth, (_req: Request, res: Response) => {
 // ── PUT /api/admin/providers/:id/key — salva chave diretamente no banco ────────
 
 router.put("/providers/:id/key", requireAuth, async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { apiKey } = req.body as { apiKey?: string };
 
   if (!apiKey || apiKey.trim() === "") {
@@ -192,7 +192,7 @@ router.put("/providers/:id/key", requireAuth, async (req: Request, res: Response
 // ── DELETE /api/admin/providers/:id/key — remove chave do banco ────────────────
 
 router.delete("/providers/:id/key", requireAuth, async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const updated = await updateProvider(id, { apiKey: "__env__" });
   if (!updated) {
     res.status(404).json({ error: "Provider não encontrado" });
@@ -204,7 +204,7 @@ router.delete("/providers/:id/key", requireAuth, async (req: Request, res: Respo
 // ── PATCH /api/admin/providers/:id/toggle — habilita/desabilita ───────────────
 
 router.patch("/providers/:id/toggle", requireAuth, async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const provider = [...providers.values()].find((p) => p.id === id);
   if (!provider) {
     res.status(404).json({ error: "Provider não encontrado" });
@@ -218,7 +218,7 @@ router.patch("/providers/:id/toggle", requireAuth, async (req: Request, res: Res
 
 router.post("/providers/:id/test", requireAuth, async (req: Request, res: Response) => {
   try {
-    const result = await testProvider(req.params.id);
+    const result = await testProvider(req.params.id as string);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });

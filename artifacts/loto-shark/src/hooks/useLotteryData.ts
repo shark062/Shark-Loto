@@ -31,10 +31,9 @@ export function useNextDrawInfo(lotteryId?: string) {
     queryKey: ["caixa/next-draw", lotteryId],
     queryFn: () => getNextDraw(lotteryId!) as Promise<NextDrawInfo>,
     enabled: !!lotteryId,
-    staleTime: 0,
-    refetchInterval: 30 * 1000,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -98,10 +97,9 @@ export function useLotteryPrizes(lotteryId?: string) {
     queryKey: ["caixa/prizes", lotteryId],
     queryFn: () => getPrizes(lotteryId!) as Promise<LotteryPrizes>,
     enabled: !!lotteryId,
-    staleTime: 0,
-    refetchInterval: 30 * 1000,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    retry: 2,
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 }

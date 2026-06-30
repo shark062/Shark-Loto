@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 
-const CHECK_INTERVAL_MS = 30 * 60 * 1000;
+const CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
 export function useAutoCheckGames() {
   const queryClient = useQueryClient();
@@ -32,10 +32,8 @@ export function useAutoCheckGames() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(runCheck, 3000);
     const interval = setInterval(runCheck, CHECK_INTERVAL_MS);
     return () => {
-      clearTimeout(timer);
       clearInterval(interval);
     };
   }, []);

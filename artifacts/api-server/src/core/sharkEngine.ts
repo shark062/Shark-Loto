@@ -415,9 +415,7 @@ function gerarAntiCluster(ctx: SharkContext, statCtx: StatisticalContext): numbe
 const ESTRATEGIAS_BASE = [
   { nome: 'impulso',       fn: (ctx: SharkContext) => gerarImpulso(ctx) },
   { nome: 'compensacao',   fn: (ctx: SharkContext) => gerarCompensacao(ctx) },
-  { nome: 'variacao_pura', fn: (ctx: SharkContext) => gerarVariacaoPura(ctx) },
   { nome: 'rep_alta',      fn: (ctx: SharkContext) => gerarRepInteligente(ctx) },
-  { nome: 'rep_baixa',     fn: (ctx: SharkContext) => gerarRepBaixa(ctx) },
 ];
 
 // ============================================================
@@ -436,11 +434,7 @@ function gerarCandidatos(
     for (const { nome, fn } of ESTRATEGIAS_BASE) {
       candidatos.push({ jogo: fn(ctx).sort((a, b) => a - b), origem: nome });
     }
-    candidatos.push({ jogo: gerarPorPeso(ctx, pesos).sort((a, b) => a - b),                 origem: 'peso_dinamico'  });
-    candidatos.push({ jogo: gerarPorJanela(statCtx, ctx.minNumbers).sort((a, b) => a - b),  origem: 'janela_ponderada' });
-    candidatos.push({ jogo: gerarNucleoVariacao(ctx, statCtx).sort((a, b) => a - b),        origem: 'nucleo_variacao' });
-    candidatos.push({ jogo: gerarMomentum(ctx, statCtx).sort((a, b) => a - b),              origem: 'momentum'       });
-    candidatos.push({ jogo: gerarAntiCluster(ctx, statCtx).sort((a, b) => a - b),           origem: 'anti_cluster'   });
+    candidatos.push({ jogo: gerarPorPeso(ctx, pesos).sort((a, b) => a - b), origem: 'peso_dinamico' });
   }
 
   return candidatos;
@@ -518,7 +512,7 @@ export function gerarJogosMaster(
 
   // ── PASSO 1: Geração multi-estratégia ────────────────────
   //    v3.1: mais rodadas + 2 novas estratégias (momentum, anti_cluster)
-  const rodadas    = Math.max(300, qtd * 40);
+  const rodadas    = Math.max(40, qtd * 8);
   const candidatos = gerarCandidatos(ctx, statCtx, rodadas, pesosAtivos);
 
   // ── PASSO 2: Deduplicação + validação ────────────────────
@@ -535,7 +529,7 @@ export function gerarJogosMaster(
 
   // ── PASSO 3: Desdobramento quente+fria ───────────────────
   const pool       = buildPoolQuenteFria(ctx, qtd);
-  const limDesd    = Math.min(2000, Math.max(500, qtd * 80));
+  const limDesd    = Math.min(300, Math.max(50, qtd * 10));
   const combosDesd = combinacoes(pool, minNumbers, limDesd);
 
   for (const combo of combosDesd) {
@@ -548,9 +542,9 @@ export function gerarJogosMaster(
 
   // ── PASSO 4: Algoritmo Evolutivo v3.1 ────────────────────
   //    5 gerações, mutação adaptativa, momentum integrado
-  const popSize = Math.min(800, Math.max(300, qtd * 50));
+  const popSize = Math.min(200, Math.max(100, qtd * 15));
   const evolved = evolvePopulation(
-    validados,
+    validados.slice(0, popSize),
     statCtx.config,
     statCtx.compositeWeights,
     statCtx.adjustedDelay,
@@ -558,8 +552,8 @@ export function gerarJogosMaster(
     statCtx.posWeights,
     statCtx.gapProfile,
     statCtx.confidence,
-    5,        // gerações (era 3)
-    popSize,  // população maior
+    2,
+    popSize,
     statCtx.momentum,
   );
 

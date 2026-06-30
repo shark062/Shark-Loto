@@ -107,105 +107,40 @@ function formatCompactStats(stats: NumberStat[]): string {
 const ROLE_PROMPTS: Record<ProviderRole, (ctx: LotteryContext, draws20: DrawData[]) => string> = {
   frequency_analyst: (ctx, draws20) => {
     const stats = buildNumberStats(ctx, draws20);
-    const compactStats = formatCompactStats(stats);
-    const last5 = draws20.slice(0, 5).map(d => `[${d.numbers.sort((a,b)=>a-b).join(",")}]`).join(" ");
-    return `Analista de frequência — ${ctx.lotteryName}. Escolher ${ctx.minNumbers} de ${ctx.totalNumbers} números.
-
-Estatísticas (formato n:freq/atraso/trend): ${compactStats}
-Últimos 5: ${last5}
-Quentes: ${ctx.hotNumbers.slice(0, 8).join(",")} | Frios: ${ctx.coldNumbers.slice(0, 8).join(",")}
-Soma média: ${ctx.avgSum.toFixed(0)} | Pares médios: ${ctx.avgEvens.toFixed(1)}
-
-Use retorno à média: frios tendem a aparecer, quentes a pausar.
-Responda APENAS JSON: {"suggestedNumbers":[${ctx.minNumbers} números 1-${ctx.totalNumbers}],"confidence":0.XX,"reasoning":"curto"}`;
+    const compact = stats.slice(0,5).map(s=>`${s.n}:${s.freq}/${s.delay}`).join(" ");
+    return `${ctx.lotteryName} min=${ctx.minNumbers} max=${ctx.totalNumbers}\nStats:${compact}\nH:${ctx.hotNumbers.slice(0,6).join(",")} C:${ctx.coldNumbers.slice(0,6).join(",")}\nPick ${ctx.minNumbers} nums JSON:{"suggestedNumbers":[...],"confidence":0.XX}`;
   },
 
   statistical_predictor: (ctx, draws20) => {
-    const last8 = draws20.slice(0, 8).map(d => {
-      const s = d.numbers.reduce((a,b)=>a+b,0);
-      const e = d.numbers.filter(n=>n%2===0).length;
-      return `[${d.numbers.sort((a,b)=>a-b).join(",")}] s=${s} p=${e}`;
-    }).join(" | ");
-    return `Preditor estatístico — ${ctx.lotteryName}. Escolher ${ctx.minNumbers} de ${ctx.totalNumbers}.
-
-Últimos 8 sorteios (s=soma,p=pares): ${last8}
-Meta: soma≈${ctx.avgSum.toFixed(0)}, pares≈${ctx.avgEvens.toFixed(0)}
-Quentes: ${ctx.hotNumbers.slice(0,8).join(",")} | Frios: ${ctx.coldNumbers.slice(0,8).join(",")}
-
-Critérios: frequência ponderada por recência, equilíbrio par/ímpar, evitar 3+ consecutivos.
-Responda APENAS JSON: {"suggestedNumbers":[${ctx.minNumbers} números distintos 1-${ctx.totalNumbers}],"confidence":0.XX,"reasoning":"curto","expectedSum":N}`;
+    const last3 = draws20.slice(0,3).map(d=>`[${d.numbers.sort((a,b)=>a-b).join(",")}]`).join(" ");
+    return `${ctx.lotteryName} min=${ctx.minNumbers} max=${ctx.totalNumbers}\nLast3:${last3}\nH:${ctx.hotNumbers.slice(0,6).join(",")} C:${ctx.coldNumbers.slice(0,6).join(",")}\nPick ${ctx.minNumbers} nums JSON:{"suggestedNumbers":[...],"confidence":0.XX}`;
   },
 
   mathematical_analyzer: (ctx, draws20) => {
-    const last10 = draws20.slice(0, 10).map(d => {
-      const sorted = [...d.numbers].sort((a,b)=>a-b);
-      const sum = sorted.reduce((a,b)=>a+b,0);
-      const evens = sorted.filter(n=>n%2===0).length;
-      const consec = sorted.reduce((c,n,i,arr) => i>0 && n===arr[i-1]+1 ? c+1 : c, 0);
-      return `[${sorted.join(",")}] s=${sum} p=${evens} c=${consec}`;
-    }).join("\n");
-    return `Analisador matemático — ${ctx.lotteryName}. Escolher ${ctx.minNumbers} de ${ctx.totalNumbers}.
-
-Últimos 10 (s=soma,p=pares,c=consecutivos):
-${last10}
-Soma média: ${ctx.avgSum.toFixed(1)} | Pares médios: ${ctx.avgEvens.toFixed(1)}
-
-Analise padrão de soma ideal, equilíbrio par/ímpar, distribuição faixas.
-Responda APENAS JSON: {"suggestedNumbers":[${ctx.minNumbers} números distintos 1-${ctx.totalNumbers}],"confidence":0.XX,"reasoning":"curto","targetSum":N}`;
+    const last3 = draws20.slice(0,3).map(d=>`[${d.numbers.sort((a,b)=>a-b).join(",")}]`).join(" ");
+    return `${ctx.lotteryName} min=${ctx.minNumbers} max=${ctx.totalNumbers}\nLast3:${last3}\nH:${ctx.hotNumbers.slice(0,6).join(",")} C:${ctx.coldNumbers.slice(0,6).join(",")}\nPick ${ctx.minNumbers} nums JSON:{"suggestedNumbers":[...],"confidence":0.XX}`;
   },
 
   pattern_recognizer: (ctx, draws20) => {
-    // Limitado a 20 sorteios, números ordenados
-    const history = draws20.slice(0, 20).map((d, i) =>
-      `#${i+1}:[${[...d.numbers].sort((a,b)=>a-b).join(",")}]`
-    ).join(" ");
-    const neverSeen = Array.from({length: ctx.totalNumbers}, (_,i)=>i+1)
-      .filter(n => !Object.keys(ctx.frequencyMap).some(k => parseInt(k) === n && ctx.frequencyMap[parseInt(k)] > 0))
-      .join(",") || "nenhum";
-    return `Reconhecedor de padrões — ${ctx.lotteryName}. Escolher ${ctx.minNumbers} de ${ctx.totalNumbers}.
-
-Histórico 20 sorteios: ${history}
-Ausentes: ${neverSeen}
-Frios (mais atrasados): ${ctx.coldNumbers.slice(0,8).join(",")}
-
-Analise co-ocorrências, ciclos, padrões posicionais.
-Responda APENAS JSON: {"suggestedNumbers":[${ctx.minNumbers} números distintos 1-${ctx.totalNumbers}],"confidence":0.XX,"reasoning":"curto"}`;
+    const last3 = draws20.slice(0,3).map(d=>`[${d.numbers.sort((a,b)=>a-b).join(",")}]`).join(" ");
+    return `${ctx.lotteryName} min=${ctx.minNumbers} max=${ctx.totalNumbers}\nLast3:${last3}\nH:${ctx.hotNumbers.slice(0,6).join(",")} C:${ctx.coldNumbers.slice(0,6).join(",")}\nPick ${ctx.minNumbers} nums JSON:{"suggestedNumbers":[...],"confidence":0.XX}`;
   },
 
   strategy_advisor: (ctx, draws20) => {
-    const last5 = draws20.slice(0, 5).map(d=>`[${d.numbers.sort((a,b)=>a-b).join(",")}]`).join(" ");
-    return `Conselheiro estratégico — ${ctx.lotteryName}. Escolher ${ctx.minNumbers} de ${ctx.totalNumbers}.
-
-Quentes: ${ctx.hotNumbers.join(",")} | Frios: ${ctx.coldNumbers.join(",")}
-Soma média: ${ctx.avgSum.toFixed(1)} | Pares médios: ${ctx.avgEvens.toFixed(1)}
-Últimos 5: ${last5}
-
-Equilibre frequência, aleatoriedade e diversificação.
-Responda APENAS JSON: {"suggestedNumbers":[${ctx.minNumbers} números distintos 1-${ctx.totalNumbers}],"confidence":0.XX,"reasoning":"curto","strategy":"nome"}`;
+    const last3 = draws20.slice(0,3).map(d=>`[${d.numbers.sort((a,b)=>a-b).join(",")}]`).join(" ");
+    return `${ctx.lotteryName} min=${ctx.minNumbers} max=${ctx.totalNumbers}\nLast3:${last3}\nH:${ctx.hotNumbers.slice(0,6).join(",")} C:${ctx.coldNumbers.slice(0,6).join(",")}\nPick ${ctx.minNumbers} nums JSON:{"suggestedNumbers":[...],"confidence":0.XX}`;
   },
 
-  ensemble_judge: (ctx, _draws20) => `Juiz do ensemble — ${ctx.lotteryName}. Escolher ${ctx.minNumbers} de ${ctx.totalNumbers}.
-
-Quentes: ${ctx.hotNumbers.join(",")} | Frios: ${ctx.coldNumbers.join(",")}
-Soma média: ${ctx.avgSum.toFixed(1)} | Pares médios: ${ctx.avgEvens.toFixed(1)}
-
-Combine as análises: priorize números sugeridos por múltiplos especialistas, equilíbrio matemático, mix quentes/frios.
-Responda APENAS JSON: {"suggestedNumbers":[${ctx.minNumbers} números distintos 1-${ctx.totalNumbers}],"confidence":0.XX,"reasoning":"síntese do consenso"}`,
+  ensemble_judge: (ctx, _draws20) => {
+    return `${ctx.lotteryName} min=${ctx.minNumbers} max=${ctx.totalNumbers}\nH:${ctx.hotNumbers.slice(0,6).join(",")} C:${ctx.coldNumbers.slice(0,6).join(",")}\nPick ${ctx.minNumbers} nums JSON:{"suggestedNumbers":[...],"confidence":0.XX}`;
+  },
 };
 
 // ─── Role assignment por tipo de provider ─────────────────────────────────────
 
 const PROVIDER_ROLES: Record<string, ProviderRole> = {
-  groq:        "frequency_analyst",
   openai:      "statistical_predictor",
-  deepseek:    "mathematical_analyzer",
-  gemini:      "pattern_recognizer",
-  anthropic:   "strategy_advisor",
-  openrouter:  "ensemble_judge",
-  mistral:     "statistical_predictor",
-  cohere:      "pattern_recognizer",
-  together:    "frequency_analyst",
-  custom:      "frequency_analyst",
+  anthropic:   "frequency_analyst",
 };
 
 // Peso por role no consenso
@@ -282,7 +217,7 @@ async function callProvider(
           max_tokens: 600,
           messages: [{ role: "user", content: prompt }],
         }),
-        signal: AbortSignal.timeout(25000),
+        signal: AbortSignal.timeout(8000),
       });
     } else {
       response = await fetch(`${provider.baseUrl}/chat/completions`, {
@@ -299,7 +234,7 @@ async function callProvider(
           messages: [{ role: "user", content: prompt }],
           ...(provider.type === "deepseek" ? { stream: false } : {}),
         }),
-        signal: AbortSignal.timeout(25000),
+        signal: AbortSignal.timeout(8000),
       });
     }
   } finally {
@@ -506,7 +441,7 @@ async function executeWithRetry(
 
 export async function runEnsemble(ctx: LotteryContext): Promise<EnsembleResult> {
   const ensembleStart = Date.now();
-  const GLOBAL_TIMEOUT_MS = 60_000;
+  const GLOBAL_TIMEOUT_MS = 15_000;
 
   // Limitar histórico a 20 sorteios
   const draws20 = ctx.draws.slice(0, 20);
@@ -569,42 +504,9 @@ export async function runEnsemble(ctx: LotteryContext): Promise<EnsembleResult> 
       ? phase1Success.reduce((s,r)=>s+r.confidence,0) / phase1Success.length
       : 0;
 
-    if (phase1Success.length >= 2 && phase1AvgConf >= 0.75) {
-      logger.info({ successCount: phase1Success.length, avgConfidence: phase1AvgConf.toFixed(2) },
-        "Ensemble: confiança alta na fase 1, pulando fase 2");
-    } else if (Date.now() < timeoutAt) {
-      // ── FASE 2: Especialistas complementares ───────────────────────────────
-      const phase2Tasks = phase2.map(({ provider, role }) => {
-        const prompt = ROLE_PROMPTS[role](ctx, draws20);
-        return executeWithRetry(provider, prompt, role).then(result => {
-          if (result.success && result.extras?.rawText) {
-            result.suggestedNumbers = parseNumbers(
-              result.extras.rawText, 1, ctx.totalNumbers, ctx.minNumbers
-            );
-            result.success = result.suggestedNumbers.length >= ctx.minNumbers;
-          }
-          return result;
-        });
-      });
-
-      const phase2Results = await Promise.all(phase2Tasks);
-      allResults.push(...phase2Results);
-    }
-  }
-
-  // ── FASE 3: Juiz final ────────────────────────────────────────────────────
-  const successSoFar = allResults.filter(r => r.success);
-  if (judges.length > 0 && Date.now() < timeoutAt) {
-    const judge = judges[0];
-    const prompt = ROLE_PROMPTS[JUDGE_ROLE](ctx, draws20);
-    const judgeResult = await executeWithRetry(judge.provider, prompt, JUDGE_ROLE);
-    if (judgeResult.success && judgeResult.extras?.rawText) {
-      judgeResult.suggestedNumbers = parseNumbers(
-        judgeResult.extras.rawText, 1, ctx.totalNumbers, ctx.minNumbers
-      );
-      judgeResult.success = judgeResult.suggestedNumbers.length >= ctx.minNumbers;
-    }
-    allResults.push(judgeResult);
+    // Sem fase 2/judge — executa tudo em uma fase para velocidade
+    logger.info({ successCount: phase1Success.length, avgConfidence: phase1AvgConf.toFixed(2) },
+      "Ensemble: concluindo em fase unica");
   }
 
   // ── Atualizar métricas dos providers ─────────────────────────────────────

@@ -291,7 +291,7 @@ async function executeProviderCall(
   apiKey: string,
   prompt: string,
   systemPrompt?: string,
-  maxTokens = 1500,
+  maxTokens = 512,
 ): Promise<string> {
   const start = Date.now();
 
@@ -309,7 +309,7 @@ async function executeProviderCall(
         messages: [{ role: "user", content: prompt }],
         system: systemPrompt,
       }),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
@@ -359,7 +359,7 @@ async function executeProviderCall(
       ...extraHeaders,
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) {
@@ -492,12 +492,6 @@ export async function initDefaultProviders(): Promise<void> {
   const envProviders: Array<{ type: string; name: string }> = [
     { type: "openai",     name: "OpenAI" },
     { type: "anthropic",  name: "Anthropic" },
-    { type: "gemini",     name: "Gemini" },
-    { type: "groq",       name: "Groq" },
-    { type: "deepseek",   name: "DeepSeek" },
-    { type: "openrouter", name: "OpenRouter" },
-    { type: "mistral",    name: "Mistral" },
-    { type: "cohere",     name: "Cohere" },
   ];
 
   let added = 0;

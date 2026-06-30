@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useEffect } from "react";
 import { Switch, Route } from "wouter";
-import { queryClient, resolveApiUrl } from "./lib/queryClient";
+import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
@@ -25,7 +25,6 @@ import Premium from "@/pages/Premium";
 import Sobre from "@/pages/Sobre";
 import Admin from "@/pages/Admin";
 import { useAutoCheckGames } from "@/hooks/useAutoCheckGames";
-
 function Router() {
   return (
     <Switch>
@@ -52,27 +51,11 @@ function Router() {
     </Switch>
   );
 }
-
-function useKeepAlive() {
-  useEffect(() => {
-    const apiUrl = resolveApiUrl("/api/health");
-    // Só faz keep-alive se a URL for absoluta (servidor externo separado)
-    if (!apiUrl.startsWith("http")) return;
-    const INTERVAL_MS = 12 * 60 * 1000;
-    const ping = () => fetch(apiUrl, { method: "GET", cache: "no-store" }).catch(() => {});
-    ping();
-    const timer = setInterval(ping, INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, []);
-}
-
 function AppContent() {
   useAutoCheckGames();
-
   useEffect(() => {
     console.log('🦈 Shark Loterias initialized - Premium Edition');
   }, []);
-
   return (
     <div className="min-h-screen text-foreground" style={{ position: 'relative' }}>
       <div style={{
@@ -91,15 +74,12 @@ function AppContent() {
     </div>
   );
 }
-
 function App() {
-  useKeepAlive();
-
+  
   return (
     <QueryClientProvider client={queryClient}>
       <AppContent />
     </QueryClientProvider>
   );
 }
-
 export default App;
