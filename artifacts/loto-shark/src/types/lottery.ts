@@ -58,3 +58,17 @@ export interface UserStats {
   winRate: number;
   totalPrize: number;
 }
+
+export type GameStatus = "pending" | "won" | "lost";
+
+export interface UserGame {
+  id: number;
+  lotteryId: string;
+  selectedNumbers: number[];
+  strategy?: string;
+  contestNumber?: number;
+  status?: GameStatus;
+  hits?: number;
+  createdAt?: string;
+  userId?: string;
+}

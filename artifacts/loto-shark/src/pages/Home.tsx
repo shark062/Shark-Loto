@@ -37,7 +37,6 @@ import {
   Wifi,
   WifiOff
 } from "lucide-react";
-import type { UserGame } from "@/types/lottery";
 
 // Componente de efeito typewriter para mensagens da IA Shark
 function TypewriterText({ text, speed = 80, className = "" }: { text: string; speed?: number; className?: string }) {
@@ -67,7 +66,7 @@ function TypewriterText({ text, speed = 80, className = "" }: { text: string; sp
 
   // Efeito de digitação
   useEffect(() => {
-    if (!isTyping || !text) return;
+    if (!isTyping || !text) return undefined;
 
     if (currentIndex < text.length) {
       const timer = setTimeout(() => {
@@ -76,10 +75,10 @@ function TypewriterText({ text, speed = 80, className = "" }: { text: string; sp
       }, speed);
 
       return () => clearTimeout(timer);
-    } else {
-      // Terminou de digitar
-      setIsTyping(false);
     }
+    // Terminou de digitar
+    setIsTyping(false);
+    return undefined;
   }, [currentIndex, text, speed, isTyping]);
 
   return (
@@ -117,7 +116,15 @@ export default function Home() {
   const { data: megasenaFrequencies, isLoading: frequenciesLoading } = useNumberFrequencies('megasena');
 
   // User games and recent results
-  const { data: recentGames, isLoading: gamesLoading } = useQuery<UserGame[]>({
+  const { data: recentGames, isLoading: gamesLoading } = useQuery<{
+    id: number;
+    lotteryId?: string;
+    selectedNumbers: number[];
+    status?: string;
+    prizeWon?: string;
+    hits?: number;
+    createdAt?: string;
+  }[]>({
     queryKey: ["/api/games"],
     queryFn: async () => {
       const res = await apiFetch('/api/games?limit=10');

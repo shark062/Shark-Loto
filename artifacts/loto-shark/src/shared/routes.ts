@@ -24,6 +24,7 @@ export const GeneratedGameSchema = z.object({
   contestNumber: z.number().optional(),
   createdAt: z.string().optional(),
   status: z.string().optional(),
+  hits: z.number().optional(),
 });
 
 export type LotteryGame = z.infer<typeof LotteryGameSchema>;
@@ -41,6 +42,7 @@ export const CreateGeneratedGameRequestSchema = z.object({
   selectedNumbers: z.array(z.number()),
   strategy: z.string().optional(),
   contestNumber: z.number().optional(),
+  gameType: z.string().optional(),
 });
 
 export type GenerateNumbersRequest = z.infer<typeof GenerateNumbersRequestSchema>;

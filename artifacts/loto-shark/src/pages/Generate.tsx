@@ -34,16 +34,16 @@ export default function Generate() {
       gameType,
       quantity,
       amountOfGames,
-      strategy
+      strategy: strategy === "avancado" ? "mixed" : strategy,
     });
-    setGeneratedGames(result.map(g => ({ ...g, saved: false })));
+    setGeneratedGames(result.map((g: any) => ({ ...g, saved: false })));
   };
 
   const handleSave = async (index: number) => {
     const game = generatedGames[index];
     await save.mutateAsync({
-      gameType,
-      numbers: game.numbers,
+      lotteryId: gameType,
+      selectedNumbers: game.numbers,
     });
     // Mark as saved locally
     const newGames = [...generatedGames];

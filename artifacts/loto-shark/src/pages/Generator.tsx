@@ -36,7 +36,7 @@ import {
   RotateCcw,
   BarChart3,
 } from "lucide-react";
-import type { UserGame, LotteryType } from "@/types/lottery";
+import type { LotteryType } from "@/types/lottery";
 import {
   salvarJogos,
   carregarPesos,

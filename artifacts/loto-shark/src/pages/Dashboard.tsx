@@ -103,7 +103,7 @@ export default function Dashboard() {
           {latestMega ? (
             <div className="space-y-6">
               <div className="flex flex-wrap gap-3 justify-center py-8">
-                {latestMega.numbers.map((num) => (
+                {latestMega.numbers?.map((num) => (
                   <NumberBall key={num} number={num} size="lg" variant="cold" />
                 ))}
               </div>

@@ -12,7 +12,7 @@ export default function History() {
 
   // Effect to trigger confetti if any recent win detected
   useEffect(() => {
-    const hasJackpot = games?.some(g => g.status === 'won' && g.hits && g.hits > 5);
+    const hasJackpot = games?.some(g => g.status === 'won' && g.hits && g.hits > 5) ?? false;
     if (hasJackpot) {
       confetti({
         particleCount: 150,
@@ -46,21 +46,17 @@ export default function History() {
               className="flex flex-col md:flex-row items-center justify-between gap-6 p-6"
             >
               <div className="flex flex-col gap-1 w-full md:w-auto">
-                <span className="text-xs font-mono text-muted-foreground uppercase">{game.gameType}</span>
-                <span className="text-xs text-white/40">{new Date(game.createdAt!).toLocaleDateString()}</span>
+                <span className="text-xs font-mono text-muted-foreground uppercase">{game.lotteryId}</span>
+                <span className="text-xs text-white/40">{game.createdAt ? new Date(game.createdAt).toLocaleDateString() : '--/--/----'}</span>
               </div>
 
               <div className="flex flex-wrap justify-center gap-2">
-                {game.numbers.map((num) => (
-                  <NumberBall 
-                    key={num} 
-                    number={num} 
+                {game.selectedNumbers?.map((num: number) => (
+                  <NumberBall
+                    key={num}
+                    number={num}
                     size="sm"
-                    className={cn(
-                      // If game is checked, we might want to highlight matches if we had that data in 'hits' detail
-                      // For now simple display
-                      "border-white/10"
-                    )}
+                    className={cn("border-white/10")}
                   />
                 ))}
               </div>
@@ -73,12 +69,12 @@ export default function History() {
                 )}
                 {game.status === 'won' && (
                   <span className="flex items-center gap-2 text-accent text-sm font-bold uppercase bg-accent/10 px-3 py-1 rounded-full shadow-[0_0_10px_rgba(255,0,255,0.3)]">
-                    <Trophy className="w-4 h-4" /> Winner ({game.hits} hits)
+                    <Trophy className="w-4 h-4" /> Winner ({game.hits ?? 0} hits)
                   </span>
                 )}
                 {game.status === 'lost' && (
                   <span className="flex items-center gap-2 text-white/40 text-sm font-bold uppercase bg-white/5 px-3 py-1 rounded-full">
-                    <AlertCircle className="w-4 h-4" /> {game.hits} hits
+                    <AlertCircle className="w-4 h-4" /> {game.hits ?? 0} hits
                   </span>
                 )}
               </div>
