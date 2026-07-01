@@ -207,7 +207,7 @@ export default function HeatMap() {
             </CardHeader>
             <CardContent className="space-y-3">
               {mostFrequent.map((freq, index) => (
-                <div key={freq.number} className="flex items-center justify-between p-2 bg-white/[0.07] rounded">
+                <div key={freq.number} className="flex items-center justify-between p-2 bg-black/30 rounded">
                   <div className="flex items-center space-x-3">
                     <Badge variant="destructive" className="w-8 h-8 rounded-full flex items-center justify-center p-0">
                       {freq.number}
@@ -235,9 +235,9 @@ export default function HeatMap() {
             </CardHeader>
             <CardContent className="space-y-3">
               {leastFrequent.map((freq, index) => (
-                <div key={freq.number} className="flex items-center justify-between p-2 bg-white/[0.07] rounded">
+                <div key={freq.number} className="flex items-center justify-between p-2 bg-black/30 rounded">
                   <div className="flex items-center space-x-3">
-                    <Badge variant="secondary" className="w-8 h-8 rounded-full flex items-center justify-center p-0 bg-white/[0.07] text-primary-foreground">
+                    <Badge variant="secondary" className="w-8 h-8 rounded-full flex items-center justify-center p-0 bg-black/30 text-primary-foreground">
                       {freq.number}
                     </Badge>
                     <span className="font-mono">#{index + 1}</span>
@@ -277,7 +277,7 @@ export default function HeatMap() {
                       variant="secondary" 
                       className={`${
                         getNumberDetails(selectedNumber)?.temperature === 'hot' ? 'bg-destructive' :
-                        getNumberDetails(selectedNumber)?.temperature === 'warm' ? 'bg-white/[0.07]' :
+                        getNumberDetails(selectedNumber)?.temperature === 'warm' ? 'bg-black/30' :
                         'bg-primary'
                       } text-white`}
                     >
@@ -307,7 +307,7 @@ export default function HeatMap() {
 
                   <Button 
                     onClick={() => setLocation(`/generator?lottery=${selectedLottery}&number=${selectedNumber}`)}
-                    className="w-full bg-white/[0.07]"
+                    className="w-full bg-black/30"
                     data-testid="use-in-generator-button"
                   >
                     <Zap className="h-4 w-4 mr-2" />
