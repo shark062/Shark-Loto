@@ -18,9 +18,9 @@ export function NumberBall({ number, className, variant = "default", size = "md"
 
   const glows: Record<string, string> = {
     default: "",
-    hot: "[filter:drop-shadow(0_0_8px_rgba(255,60,60,0.85))]",
-    cold: "[filter:drop-shadow(0_0_8px_rgba(0,200,255,0.85))]",
-    selected: "[filter:drop-shadow(0_0_12px_rgba(255,0,255,0.95))] animate-pulse",
+    hot: "[filter:drop-shadow(0_0_3px_rgba(255,60,60,0.35))]",
+    cold: "[filter:drop-shadow(0_0_3px_rgba(0,200,255,0.35))]",
+    selected: "[filter:drop-shadow(0_0_4px_rgba(255,0,255,0.45))]",
   };
 
   return (

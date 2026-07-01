@@ -270,7 +270,7 @@ export default function HeatMap() {
                         src={`/dezenas/dezena_${selectedNumber.toString().padStart(2, '0')}.svg`}
                         alt={selectedNumber.toString().padStart(2, '0')}
                         draggable={false}
-                        className="w-16 h-16 [filter:drop-shadow(0_0_12px_rgba(0,220,255,0.9))]"
+                        className="w-16 h-16 [filter:drop-shadow(0_0_4px_rgba(0,220,255,0.35))]"
                       />
                     </div>
                     <Badge 

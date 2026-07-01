@@ -214,7 +214,7 @@ export default function AIAssistant() {
                 <div key={idx} className="flex items-center justify-between bg-black/30 rounded p-3">
                   <div className="flex gap-2 flex-wrap">
                     {game.map((num: number) => (
-                      <img key={num} src={`/dezenas/dezena_${num.toString().padStart(2,'0')}.svg`} alt={num.toString().padStart(2,'0')} draggable={false} className="w-10 h-10 [filter:drop-shadow(0_0_7px_rgba(100,100,255,0.8))]" />
+                      <img key={num} src={`/dezenas/dezena_${num.toString().padStart(2,'0')}.svg`} alt={num.toString().padStart(2,'0')} draggable={false} className="w-10 h-10 [filter:drop-shadow(0_0_3px_rgba(100,100,255,0.3))]" />
                     ))}
                   </div>
                   <Button

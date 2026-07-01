@@ -201,7 +201,7 @@ function LiveSorteioCard({ userGames }: { userGames: any[] }) {
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {drawnNumbers.map(n => (
-                  <img key={n} src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`} alt={n.toString().padStart(2,'0')} draggable={false} className="w-8 h-8 [filter:drop-shadow(0_0_6px_rgba(0,220,255,0.9))]" />
+                  <img key={n} src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`} alt={n.toString().padStart(2,'0')} draggable={false} className="w-8 h-8 [filter:drop-shadow(0_0_3px_rgba(0,220,255,0.35))]" />
                 ))}
               </div>
             </div>
@@ -229,7 +229,7 @@ function LiveSorteioCard({ userGames }: { userGames: any[] }) {
                       <div className="flex flex-wrap gap-1">
                         {(res.game.selectedNumbers as number[]).map((n: number) => (
                           <img key={n} src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`} alt={n.toString().padStart(2, '0')} draggable={false}
-                            className={`w-7 h-7 transition-all ${res.matches.includes(n) ? '[filter:drop-shadow(0_0_7px_rgba(0,255,100,0.95))]' : 'opacity-30'}`}
+                            className={`w-7 h-7 transition-all ${res.matches.includes(n) ? '[filter:drop-shadow(0_0_3px_rgba(0,255,100,0.4))]' : 'opacity-30'}`}
                           />
                         ))}
                       </div>
@@ -715,7 +715,7 @@ export default function Results() {
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {game.selectedNumbers.map((num: number) => (
-                          <img key={num} src={`/dezenas/dezena_${num.toString().padStart(2, '0')}.svg`} alt={num.toString().padStart(2,'0')} draggable={false} className="w-7 h-7 [filter:drop-shadow(0_0_4px_rgba(255,255,255,0.2))]" />
+                          <img key={num} src={`/dezenas/dezena_${num.toString().padStart(2, '0')}.svg`} alt={num.toString().padStart(2,'0')} draggable={false} className="w-7 h-7 [filter:drop-shadow(0_0_2px_rgba(255,255,255,0.15))]" />
                         ))}
                       </div>
                     </CardContent>

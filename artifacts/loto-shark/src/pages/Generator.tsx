@@ -564,9 +564,9 @@ export default function Generator() {
                                     alt={num.toString().padStart(2, '0')}
                                     draggable={false}
                                     className={`w-9 h-9 transition-all duration-200 ${
-                                      temp === 'hot' ? '[filter:drop-shadow(0_0_6px_rgba(255,60,60,0.9))]' :
-                                      temp === 'warm' ? '[filter:drop-shadow(0_0_6px_rgba(255,200,0,0.9))]' :
-                                      '[filter:drop-shadow(0_0_6px_rgba(0,200,255,0.9))]'
+                                      temp === 'hot' ? '[filter:drop-shadow(0_0_3px_rgba(255,60,60,0.35))]' :
+                                      temp === 'warm' ? '[filter:drop-shadow(0_0_3px_rgba(255,200,0,0.35))]' :
+                                      '[filter:drop-shadow(0_0_3px_rgba(0,200,255,0.35))]'
                                     }`}
                                   />
                                 );
@@ -728,7 +728,7 @@ export default function Generator() {
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {ctx.hot.map((n: number) => (
-                          <img key={n} src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`} alt={n.toString().padStart(2,'0')} draggable={false} className="w-8 h-8 [filter:drop-shadow(0_0_6px_rgba(255,60,60,0.9))]" />
+                          <img key={n} src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`} alt={n.toString().padStart(2,'0')} draggable={false} className="w-8 h-8 [filter:drop-shadow(0_0_3px_rgba(255,60,60,0.35))]" />
                         ))}
                       </div>
                     </div>
@@ -741,7 +741,7 @@ export default function Generator() {
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {ctx.cold.map((n: number) => (
-                          <img key={n} src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`} alt={n.toString().padStart(2,'0')} draggable={false} className="w-8 h-8 [filter:drop-shadow(0_0_6px_rgba(0,200,255,0.9))]" />
+                          <img key={n} src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`} alt={n.toString().padStart(2,'0')} draggable={false} className="w-8 h-8 [filter:drop-shadow(0_0_3px_rgba(0,200,255,0.35))]" />
                         ))}
                       </div>
                     </div>
@@ -754,7 +754,7 @@ export default function Generator() {
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {ctx.warm.map((n: number) => (
-                          <img key={n} src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`} alt={n.toString().padStart(2,'0')} draggable={false} className="w-8 h-8 [filter:drop-shadow(0_0_6px_rgba(255,200,0,0.9))]" />
+                          <img key={n} src={`/dezenas/dezena_${n.toString().padStart(2, '0')}.svg`} alt={n.toString().padStart(2,'0')} draggable={false} className="w-8 h-8 [filter:drop-shadow(0_0_3px_rgba(255,200,0,0.35))]" />
                         ))}
                       </div>
                     </div>
@@ -824,11 +824,11 @@ export default function Generator() {
                               draggable={false}
                               data-testid={`game-${index}-number-${number}`}
                               className={`w-10 h-10 transition-all ${
-                                game.strategy === 'hot' ? '[filter:drop-shadow(0_0_7px_rgba(255,60,60,0.85))]' :
-                                game.strategy === 'cold' ? '[filter:drop-shadow(0_0_7px_rgba(0,200,255,0.85))]' :
-                                game.strategy === 'shark' ? '[filter:drop-shadow(0_0_7px_rgba(255,200,0,0.85))]' :
-                                game.strategy === 'ai' ? '[filter:drop-shadow(0_0_7px_rgba(180,0,255,0.85))]' :
-                                '[filter:drop-shadow(0_0_5px_rgba(255,255,255,0.3))]'
+                                game.strategy === 'hot' ? '[filter:drop-shadow(0_0_3px_rgba(255,60,60,0.35))]' :
+                                game.strategy === 'cold' ? '[filter:drop-shadow(0_0_3px_rgba(0,200,255,0.35))]' :
+                                game.strategy === 'shark' ? '[filter:drop-shadow(0_0_3px_rgba(255,200,0,0.35))]' :
+                                game.strategy === 'ai' ? '[filter:drop-shadow(0_0_3px_rgba(180,0,255,0.35))]' :
+                                '[filter:drop-shadow(0_0_2px_rgba(255,255,255,0.2))]'
                               }`}
                             />
                           ))}

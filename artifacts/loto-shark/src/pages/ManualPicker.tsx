@@ -329,9 +329,9 @@ export default function ManualPicker() {
                             alt={num.toString().padStart(2, '0')}
                             draggable={false}
                             className={`w-10 h-10 transition-all ${
-                              temp === 'hot' ? '[filter:drop-shadow(0_0_8px_rgba(255,60,60,0.9))]' :
-                              temp === 'warm' ? '[filter:drop-shadow(0_0_8px_rgba(255,200,0,0.9))]' :
-                              '[filter:drop-shadow(0_0_8px_rgba(0,200,255,0.9))]'
+                              temp === 'hot' ? '[filter:drop-shadow(0_0_3px_rgba(255,60,60,0.35))]' :
+                              temp === 'warm' ? '[filter:drop-shadow(0_0_3px_rgba(255,200,0,0.35))]' :
+                              '[filter:drop-shadow(0_0_3px_rgba(0,200,255,0.35))]'
                             }`}
                           />
                         );
@@ -473,9 +473,9 @@ export default function ManualPicker() {
                                 alt={num.toString().padStart(2, '0')}
                                 draggable={false}
                                 className={`w-8 h-8 ${
-                                  temp === 'hot' ? '[filter:drop-shadow(0_0_6px_rgba(255,60,60,0.9))]' :
-                                  temp === 'warm' ? '[filter:drop-shadow(0_0_6px_rgba(255,200,0,0.9))]' :
-                                  '[filter:drop-shadow(0_0_6px_rgba(0,200,255,0.9))]'
+                                  temp === 'hot' ? '[filter:drop-shadow(0_0_3px_rgba(255,60,60,0.35))]' :
+                                  temp === 'warm' ? '[filter:drop-shadow(0_0_3px_rgba(255,200,0,0.35))]' :
+                                  '[filter:drop-shadow(0_0_3px_rgba(0,200,255,0.35))]'
                                 }`}
                               />
                             );
